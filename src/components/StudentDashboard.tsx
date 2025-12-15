@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { projectId } from '../utils/supabase/info';
 import { AppContextType } from '../App';
-import { lessons, getLessonByOrder, getNextLesson, getTotalLessons, getLessonsByLevel } from '../data/notionLessons';
+import { lessons, getLessonByOrder, getTotalLessons, getLessonsByLevel } from '../data/notionLessons';
 import NewLessonViewer from './NewLessonViewer';
 import ReviewSession from './ReviewSession';
 import IslamicTrivia from './IslamicTrivia';
-import { BookOpen, Award, Clock, Star, TrendingUp, Brain, RotateCcw, AlertTriangle } from 'lucide-react';
+import { BookOpen, Award, Clock, TrendingUp, Brain, RotateCcw, AlertTriangle, Trophy, Medal, User } from 'lucide-react';
 
 interface StudentDashboardProps {
   context: AppContextType;
@@ -28,6 +28,14 @@ interface ReviewItem {
   nextReview: string;
   interval: number;
   easeFactor: number;
+}
+
+interface LeaderboardEntry {
+  userId: string;
+  username: string;
+  name: string;
+  completedLessons: number;
+  currentLessonOrder: number;
 }
 
 const translations = {
@@ -55,7 +63,23 @@ const translations = {
     reset: 'Sıfırla',
     selectLesson: 'Ders Seç',
     resetting: 'Sıfırlanıyor...',
-    lesson: 'Ders'
+    lesson: 'Ders',
+    leaderboard: 'Lider Tablosu',
+    account: 'Hesabım',
+    badges: 'Rozetler',
+    rank: 'Sıralama',
+    you: 'Sen',
+    viewAccount: 'Hesap Bilgileri',
+    badgeLessonStarter: 'Ders Başlangıcı',
+    badgeLessonStarterDesc: 'İlk dersi tamamladın.',
+    badgeLessonExplorer: 'Ders Keşifçisi',
+    badgeLessonExplorerDesc: '5 dersi tamamladın.',
+    badgeLessonPro: 'Ders Ustası',
+    badgeLessonProDesc: '10+ dersi tamamladın.',
+    badgeReviewHero: 'Tekrar Kahramanı',
+    badgeReviewHeroDesc: 'İlk tekrarı tamamladın.',
+    badgeConsistency: 'Düzenli Öğrenen',
+    badgeConsistencyDesc: '7 dersi tamamladın.'
   },
   nl: {
     progress: 'Voortgang',
@@ -81,7 +105,23 @@ const translations = {
     reset: 'Reset',
     selectLesson: 'Selecteer Les',
     resetting: 'Resetten...',
-    lesson: 'Les'
+    lesson: 'Les',
+    leaderboard: 'Klassement',
+    account: 'Mijn account',
+    badges: 'Badges',
+    rank: 'Rang',
+    you: 'Jij',
+    viewAccount: 'Accountgegevens',
+    badgeLessonStarter: 'Les Starter',
+    badgeLessonStarterDesc: 'Je hebt je eerste les voltooid.',
+    badgeLessonExplorer: 'Les Verkenner',
+    badgeLessonExplorerDesc: 'Je hebt 5 lessen voltooid.',
+    badgeLessonPro: 'Les Pro',
+    badgeLessonProDesc: 'Je hebt 10+ lessen voltooid.',
+    badgeReviewHero: 'Herhaal Held',
+    badgeReviewHeroDesc: 'Je hebt je eerste herhaling gedaan.',
+    badgeConsistency: 'Consistente Leerling',
+    badgeConsistencyDesc: 'Je hebt 7 lessen voltooid.'
   }
 };
 
@@ -95,12 +135,20 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [selectedResetLesson, setSelectedResetLesson] = useState<number>(1);
   const [resetting, setResetting] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
   const t = translations[language];
 
   useEffect(() => {
     fetchProgress();
   }, [user.id, accessToken]);
+
+  useEffect(() => {
+    if (accessToken) {
+      fetchLeaderboard();
+    }
+  }, [accessToken]);
 
   const fetchProgress = async () => {
     try {
@@ -128,6 +176,53 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
       console.error('Error fetching progress:', error instanceof Error ? error.message : error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLeaderboard = async () => {
+    setLeaderboardLoading(true);
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-33549613/students`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
+        }
+      );
+
+      const data = await response.json();
+      if (response.ok) {
+        const entries: LeaderboardEntry[] = (data.students || []).map((s: any) => ({
+          userId: s.userId,
+          username: s.username,
+          name: s.name,
+          completedLessons: (s.completedLessons || []).length,
+          currentLessonOrder: s.currentLessonOrder || s.currentLessonIndex || 1
+        }));
+
+        const sorted = entries.sort((a, b) => b.completedLessons - a.completedLessons);
+        setLeaderboard(sorted.slice(0, 10));
+      } else {
+        setLeaderboard([{
+          userId: user.id,
+          username: user.username,
+          name: user.name,
+          completedLessons: progress?.completedLessons.length || 0,
+          currentLessonOrder: progress?.currentLessonOrder || 1
+        }]);
+      }
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error instanceof Error ? error.message : error);
+      setLeaderboard([{
+        userId: user.id,
+        username: user.username,
+        name: user.name,
+        completedLessons: progress?.completedLessons.length || 0,
+        currentLessonOrder: progress?.currentLessonOrder || 1
+      }]);
+    } finally {
+      setLeaderboardLoading(false);
     }
   };
 
@@ -305,9 +400,49 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
   const levelCompletedCount = currentLevelLessons.filter(
     lesson => progress.completedLessons.includes(lesson.id)
   ).length;
-  const levelProgressPercent = (levelCompletedCount / currentLevelLessons.length) * 100;
+  const levelProgressPercent = currentLevelLessons.length
+    ? (levelCompletedCount / currentLevelLessons.length) * 100
+    : 0;
 
   const currentLesson = currentLevelLessons[progress.currentLessonIndex];
+
+  const badgeDefinitions = [
+    {
+      id: 'lesson-starter',
+      title: t.badgeLessonStarter,
+      description: t.badgeLessonStarterDesc,
+      unlocked: progress.completedLessons.length >= 1
+    },
+    {
+      id: 'lesson-explorer',
+      title: t.badgeLessonExplorer,
+      description: t.badgeLessonExplorerDesc,
+      unlocked: progress.completedLessons.length >= 5
+    },
+    {
+      id: 'lesson-pro',
+      title: t.badgeLessonPro,
+      description: t.badgeLessonProDesc,
+      unlocked: progress.completedLessons.length >= 10
+    },
+    {
+      id: 'review-hero',
+      title: t.badgeReviewHero,
+      description: t.badgeReviewHeroDesc,
+      unlocked: (progress.reviewItems || []).length > 0
+    },
+    {
+      id: 'consistency',
+      title: t.badgeConsistency,
+      description: t.badgeConsistencyDesc,
+      unlocked: progress.completedLessons.length >= 7
+    }
+  ];
+
+  const myRank =
+    leaderboard.findIndex(entry => entry.userId === user.id) >= 0
+      ? leaderboard.findIndex(entry => entry.userId === user.id) + 1
+      : null;
 
   return (
     <div className="space-y-6">
@@ -441,6 +576,126 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
             </button>
           </div>
         )}
+      </div>
+
+      {/* Account, Leaderboard, Badges */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Account details */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 border-4 border-blue-200">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-blue-100 p-3 rounded-xl">
+              <User className="text-blue-600" size={22} />
+            </div>
+            <h2 className="text-blue-800">{t.account}</h2>
+          </div>
+          <div className="space-y-2 text-gray-700">
+            <div className="flex justify-between">
+              <span>{language === 'tr' ? 'İsim' : 'Naam'}</span>
+              <span className="font-semibold text-gray-900">{user.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Username</span>
+              <span className="font-semibold text-gray-900">@{user.username}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>{language === 'tr' ? 'Rol' : 'Rol'}</span>
+              <span className="font-semibold text-gray-900">
+                {user.role === 'teacher'
+                  ? (language === 'tr' ? 'Öğretmen' : 'Leraar')
+                  : (language === 'tr' ? 'Öğrenci' : 'Student')}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>{language === 'tr' ? 'Tamamlanan Ders' : 'Voltooide Lessen'}</span>
+              <span className="font-semibold text-gray-900">{progress.completedLessons.length}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>{language === 'tr' ? 'Sıradaki Ders' : 'Volgende Les'}</span>
+              <span className="font-semibold text-gray-900">{progress.currentLessonOrder}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Leaderboard */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 border-4 border-yellow-200">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-yellow-100 p-3 rounded-xl">
+              <Trophy className="text-yellow-600" size={22} />
+            </div>
+            <h2 className="text-yellow-800">{t.leaderboard}</h2>
+          </div>
+          {leaderboardLoading ? (
+            <p className="text-gray-500">{language === 'tr' ? 'Yükleniyor...' : 'Laden...'}</p>
+          ) : (
+            <div className="space-y-2">
+              {leaderboard.slice(0, 5).map((entry, index) => {
+                const isYou = entry.userId === user.id;
+                return (
+                  <div
+                    key={entry.userId}
+                    className={`flex items-center justify-between p-3 rounded-xl border ${
+                      isYou ? 'border-purple-300 bg-purple-50' : 'border-gray-200 bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                        index === 0 ? 'bg-yellow-400 text-white' :
+                        index === 1 ? 'bg-gray-300 text-gray-800' :
+                        index === 2 ? 'bg-amber-600 text-white' :
+                        'bg-gray-200 text-gray-700'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="text-gray-800 font-semibold">
+                          {entry.name} {isYou ? `(${t.you})` : ''}
+                        </p>
+                        <p className="text-sm text-gray-500">@{entry.username}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-purple-700 font-semibold">
+                        {entry.completedLessons} / {getTotalLessons()}
+                      </p>
+                      <p className="text-xs text-gray-500">{language === 'tr' ? 'Ders' : 'Les'}</p>
+                    </div>
+                  </div>
+                );
+              })}
+              {myRank && myRank > 5 && (
+                <p className="text-sm text-gray-600">
+                  {language === 'tr' ? 'Senin sıralaman:' : 'Jouw rang:'} #{myRank}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Badges */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 border-4 border-green-200">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-green-100 p-3 rounded-xl">
+              <Medal className="text-green-600" size={22} />
+            </div>
+            <h2 className="text-green-800">{t.badges}</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {badgeDefinitions.map((badge) => (
+              <div
+                key={badge.id}
+                className={`p-3 rounded-xl border ${
+                  badge.unlocked ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Medal className={badge.unlocked ? 'text-green-600' : 'text-gray-400'} size={18} />
+                  <p className="font-semibold text-gray-800">{badge.title}</p>
+                </div>
+                <p className="text-sm text-gray-600 mt-1">{badge.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Reset Progress Button */}
