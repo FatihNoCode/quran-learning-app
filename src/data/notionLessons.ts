@@ -1,20 +1,33 @@
-// Arabic learning curriculum based on Notion pages
-// 8 lessons following the exact structure from Alif Ba Notion workspace
+// Interactive lesson data built from the provided lesson images.
+// Titles/instructions include TR and NL. Audio URLs are placeholders for future assets.
 
-export interface LessonContent {
-  type: 'letter-grid' | 'letter-practice' | 'letter-positions' | 'letter-connected' | 
-        'letter-haraka' | 'haraka-practice';
-  title: string; // Only Turkish as in original pages
-  instruction: string; // Only Turkish as in original pages
-  letterGroups?: string[][]; // For grouped letter display
-  items?: LessonItem[];
-  color?: string;
-}
+export type LessonContentType =
+  | 'image-lesson'
+  | 'letter-grid'
+  | 'letter-practice'
+  | 'letter-positions'
+  | 'letter-connected'
+  | 'letter-haraka'
+  | 'haraka-practice';
 
 export interface LessonItem {
   arabic: string;
   transliteration?: string;
   explanation?: string;
+  audioUrl?: string;
+}
+
+export interface LessonContent {
+  type: LessonContentType;
+  title: string;
+  titleNl?: string;
+  instruction: string;
+  instructionNl?: string;
+  letterGroups?: string[][];
+  items?: LessonItem[];
+  color?: string;
+  imagePath?: string;
+  audioUrl?: string;
 }
 
 export interface Lesson {
@@ -24,137 +37,56 @@ export interface Lesson {
   content: LessonContent;
 }
 
-// Lesson 1: KUR'AN HARFLERİ (Quran Letters)
-const lesson1: Lesson = {
-  id: 'lesson-1',
-  order: 1,
-  level: 'Sayfa 1',
-  content: {
-    type: 'letter-grid',
-    title: 'KUR\'AN HARFLERİ',
-    instruction: 'Harfleri sağdan başlayarak okuyunuz!',
-    letterGroups: [
-      ['ا', 'ب', 'ت', 'ث'],
-      ['ج', 'ح', 'خ'],
-      ['د', 'ذ', 'ر', 'ز'],
-      ['س', 'ش', 'ص', 'ض'],
-      ['ط', 'ظ', 'ع', 'غ'],
-      ['ف', 'ق', 'ك', 'ل', 'م'],
-      ['ن', 'و', 'هـ', 'لا', 'ي']
-    ],
-    color: '#10B981' // Green
-  }
-};
-
-// Lesson 2: Harfleri karışık şekilde okuyalım (Read letters in mixed order)
-const lesson2: Lesson = {
-  id: 'lesson-2',
-  order: 2,
-  level: 'Sayfa 2',
-  content: {
-    type: 'letter-practice',
-    title: 'Harfleri karışık şekilde okuyalım',
-    instruction: 'Harfleri sağdan başlayarak okuyunuz!',
-    items: [
-      { arabic: 'ج' },
-      { arabic: 'ا' },
-      { arabic: 'ت' },
-      { arabic: 'م' },
-      { arabic: 'ب' },
-      { arabic: 'ر' },
-      { arabic: 'ح' },
-      { arabic: 'د' },
-      { arabic: 'ي' },
-      { arabic: 'ظ' },
-      { arabic: 'ض' },
-      { arabic: 'ز' },
-      { arabic: 'ش' },
-      { arabic: 'ل' },
-      { arabic: 'س' },
-      { arabic: 'ن' },
-      { arabic: 'ط' },
-      { arabic: 'ع' },
-      { arabic: 'ذ' },
-      { arabic: 'ه' },
-      { arabic: 'غ' },
-      { arabic: 'و' },
-      { arabic: 'لا' },
-      { arabic: 'ك' },
-      { arabic: 'ف' },
-      { arabic: 'خ' },
-      { arabic: 'ق' },
-      { arabic: 'ت' },
-      { arabic: 'ص' }
-    ],
-    color: '#3B82F6' // Blue
-  }
-};
-
-// Lesson 3: HARFLERİN BAŞTA, ORTADA VE SONDA YAZILIŞLARI (Letter forms at beginning, middle, and end)
-const lesson3: Lesson = {
-  id: 'lesson-3',
-  order: 3,
-  level: 'Sayfa 3',
-  content: {
-    type: 'letter-positions',
-    title: 'HARFLERİN BAŞTA, ORTADA VE SONDA YAZILIŞLARI',
-    instruction: 'Sonda – Ortada – Başta – Harf',
-    items: [
-      { arabic: 'ط – ط – ط – ط' },
-      { arabic: 'ا – ا – ا – ا' },
-      { arabic: 'ظ – ظ – ظ – ظ' },
-      { arabic: 'ب – ـبـ – بـ – ب' },
-      { arabic: 'ع – ـعـ – ع – ع' },
-      { arabic: 'ت – ـتـ – تـ – ت' },
-      { arabic: 'غ – ـغـ – غ – غ' },
-      { arabic: 'ث – ـثـ – ثـ – ث' },
-      { arabic: 'ف – ـفـ – ف – ف' },
-      { arabic: 'ج – ـجـ – جـ – ج' },
-      { arabic: 'ق – ـقـ – ق – ق' },
-      { arabic: 'ح – ـحـ – حـ – ح' },
-      { arabic: 'ك – ـكـ – ك – ك' },
-      { arabic: 'خ – ـخـ – خـ – خ' },
-      { arabic: 'ل – ـلـ – ل – ل' },
-      { arabic: 'د – د – د – د' },
-      { arabic: 'م – ـمـ – م – م' },
-      { arabic: 'ذ – ذ – ذ – ذ' },
-      { arabic: 'ن – ـنـ – ن – ن' },
-      { arabic: 'ر – ر – р – ر' },
-      { arabic: 'و – و – و – و' },
-      { arabic: 'ز – ز – ز – ز' },
-      { arabic: 'ه – ـهـ – هـ – ه' },
-      { arabic: 'س – ـسـ – سـ – س' },
-      { arabic: 'لا – la – la – la' },
-      { arabic: 'ش – ـشـ – شـ – ش' },
-      { arabic: 'ي – ـيـ – يـ – ي' },
-      { arabic: 'ص – ـصـ – صـ – ص' },
-      { arabic: 'ض – ـضـ – ضـ – ض' }
-    ],
-    color: '#F59E0B' // Amber
-  }
-};
-
-export const lessons: Lesson[] = [
-  lesson1,
-  lesson2,
-  lesson3
+const palette = [
+  '#7C3AED',
+  '#2563EB',
+  '#059669',
+  '#D97706',
+  '#EC4899',
+  '#0EA5E9',
 ];
 
-// Helper functions
-export const getLessonByOrder = (order: number): Lesson | undefined => {
-  return lessons.find(lesson => lesson.order === order);
-};
+const lessonImages = Array.from({ length: 24 }, (_, i) => {
+  const idx = i + 1;
+  const num = idx.toString().padStart(2, '0');
+  return {
+    id: `lesson-${idx}`,
+    order: idx,
+    level: `Ünite 1`,
+    imagePath: `/lesson-images/lesson-${num}.jpeg`,
+  };
+});
 
-export const getNextLesson = (currentOrder: number): Lesson | undefined => {
-  return lessons.find(lesson => lesson.order === currentOrder + 1);
-};
+export const lessons: Lesson[] = lessonImages.map((l, i) => {
+  const color = palette[i % palette.length];
+  return {
+    id: l.id,
+    order: l.order,
+    level: l.level,
+    content: {
+      type: 'image-lesson',
+      title: `Ders ${l.order}: Görsel`,
+      titleNl: `Les ${l.order}: Afbeelding`,
+      instruction:
+        'Görseldeki notları inceleyin, harfleri sesli okuyun ve sonraki adıma geçin.',
+      instructionNl:
+        'Bekijk de notities in de afbeelding, lees de letters hardop en ga verder naar de volgende stap.',
+      imagePath: l.imagePath,
+      color,
+      audioUrl: '',
+    },
+  };
+});
 
-export const getTotalLessons = (): number => {
-  return lessons.length;
-};
+export const getLessonByOrder = (order: number): Lesson | undefined =>
+  lessons.find((lesson) => lesson.order === order);
 
-export const getLessonsByLevel = (level: string): Lesson[] => {
-  return lessons.filter(lesson => lesson.level === level);
-};
+export const getNextLesson = (currentOrder: number): Lesson | undefined =>
+  lessons.find((lesson) => lesson.order === currentOrder + 1);
+
+export const getTotalLessons = (): number => lessons.length;
+
+export const getLessonsByLevel = (level: string): Lesson[] =>
+  lessons.filter((lesson) => lesson.level === level);
 
 export default lessons;

@@ -48,6 +48,100 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
   const [showParts, setShowParts] = useState(false);
 
   const t = translations[language];
+  const localizedTitle = language === 'nl' ? (lesson.content.titleNl || lesson.content.title) : lesson.content.title;
+  const localizedInstruction = language === 'nl' ? (lesson.content.instructionNl || lesson.content.instruction) : lesson.content.instruction;
+
+  const playAudio = (url?: string) => {
+    if (!url) return;
+    const audio = new Audio(url);
+    audio.play().catch(() => {});
+  };
+
+  if (lesson.content.type === 'image-lesson') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-4 flex items-center justify-center">
+        <div className="max-w-5xl w-full bg-white rounded-3xl shadow-2xl border-4 border-purple-200 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 rounded-xl p-3">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold">{localizedTitle}</h2>
+                <p className="text-sm text-purple-100">{localizedInstruction}</p>
+              </div>
+            </div>
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 px-3 py-2 bg-white text-purple-600 rounded-xl hover:bg-purple-50 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {t.back}
+            </button>
+          </div>
+
+          <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl border-2 border-purple-200 overflow-hidden">
+              <img
+                src={lesson.content.imagePath}
+                alt={localizedTitle}
+                className="w-full h-full object-contain bg-white"
+              />
+            </div>
+            <div className="space-y-4">
+              <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
+                <p className="text-gray-700">{localizedInstruction}</p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => playAudio(lesson.content.audioUrl)}
+                  disabled={!lesson.content.audioUrl}
+                  className={`flex-1 py-3 rounded-xl transition-colors ${
+                    lesson.content.audioUrl
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600'
+                      : 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  {lesson.content.audioUrl
+                    ? (language === 'tr' ? 'Sesli Dinle' : 'Audio afspelen')
+                    : (language === 'tr' ? 'Ses eklenecek' : 'Audio komt nog')}
+                </button>
+                <button
+                  onClick={() => setCompleted(true)}
+                  className="flex-1 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors"
+                >
+                  {t.complete}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {completed && (
+            <div className="px-6 pb-6">
+              <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-5 flex items-center gap-3">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+                <div>
+                  <p className="text-green-800 font-semibold">{t.lessonComplete}</p>
+                  <p className="text-green-700 text-sm">
+                    {language === 'tr' ? 'Sonraki derse geçebilirsiniz.' : 'Je kunt doorgaan naar de volgende les.'}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={onComplete}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-colors flex items-center gap-2"
+                >
+                  {language === 'tr' ? 'Devam et' : 'Ga door'}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
   
   // Handle letter-grid type (no items to iterate)
   if (lesson.content.type === 'letter-grid') {
@@ -60,7 +154,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                 <CheckCircle className="w-12 h-12 text-white" />
               </div>
               <h1 className="text-purple-800 mb-3">{t.lessonComplete}</h1>
-              <p className="text-gray-600 mb-3">{lesson.content.title}</p>
+              <p className="text-gray-600 mb-3">{localizedTitle}</p>
               <p className="text-green-600 mb-6">
                 {language === 'tr' ? '🎉 Harika iş! Sonraki derse geçiyorsun...' : '🎉 Geweldig werk! Naar de volgende les...'}
               </p>
@@ -98,8 +192,8 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-gray-800">{lesson.content.title}</h2>
-                  <p className="text-gray-600 text-sm">{lesson.content.instruction}</p>
+                  <h2 className="text-gray-800">{localizedTitle}</h2>
+                  <p className="text-gray-600 text-sm">{localizedInstruction}</p>
                 </div>
               </div>
             </div>
@@ -174,7 +268,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
               <CheckCircle className="w-16 h-16 text-white" />
             </div>
             <h1 className="text-purple-800 mb-4">{t.lessonComplete}</h1>
-            <p className="text-gray-600 mb-4 text-xl">{lesson.content.title}</p>
+            <p className="text-gray-600 mb-4 text-xl">{localizedTitle}</p>
             <p className="text-green-600 mb-8">
               {language === 'tr' ? '🎉 Harika iş! Sonraki derse geçiyorsun...' : '🎉 Geweldig werk! Naar de volgende les...'}
             </p>
@@ -213,8 +307,8 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-gray-800">{lesson.content.title}</h2>
-                <p className="text-gray-600 text-sm">{lesson.content.instruction}</p>
+                <h2 className="text-gray-800">{localizedTitle}</h2>
+                <p className="text-gray-600 text-sm">{localizedInstruction}</p>
               </div>
             </div>
           </div>

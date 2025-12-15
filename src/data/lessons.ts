@@ -32,16 +32,16 @@ export const lessons: Lesson[] = notionLessons.map((lesson) => {
     ...lesson,
     title: {
       tr: lesson.content.title,
-      nl: lesson.content.title,
+      nl: lesson.content.titleNl || lesson.content.title,
     },
     description: {
       tr: lesson.content.instruction || '',
-      nl: lesson.content.instruction || '',
+      nl: lesson.content.instructionNl || lesson.content.instruction || '',
     },
     content: {
       ...lesson.content,
       letter,
-      pronunciation: letter,
+      pronunciation: letter || undefined,
       examples:
         lesson.content.items?.map((item) => item.arabic) ??
         lesson.content.letterGroups?.flat() ??

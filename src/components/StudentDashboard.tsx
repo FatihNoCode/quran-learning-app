@@ -139,6 +139,14 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
   const t = translations[language];
+  const getTitle = (lessonObj: any) =>
+    language === 'nl'
+      ? (lessonObj?.content?.titleNl || lessonObj?.content?.title || '')
+      : (lessonObj?.content?.title || '');
+  const getInstruction = (lessonObj: any) =>
+    language === 'nl'
+      ? (lessonObj?.content?.instructionNl || lessonObj?.content?.instruction || '')
+      : (lessonObj?.content?.instruction || '');
 
   useEffect(() => {
     fetchProgress();
@@ -268,29 +276,29 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
       currentLessonOrder: nextLessonOrder
     };
 
-    // Add to review items (spaced repetition)
-    const reviewItems = [...(progress.reviewItems || [])];
-    const existingReviewIndex = reviewItems.findIndex(item => item.lessonId === currentLesson.id);
-    
-    if (existingReviewIndex >= 0) {
-      // Update existing review item
-      const item = reviewItems[existingReviewIndex];
-      reviewItems[existingReviewIndex] = {
-        ...item,
-        interval: item.interval * item.easeFactor,
-        nextReview: new Date(Date.now() + item.interval * item.easeFactor * 24 * 60 * 60 * 1000).toISOString()
-      };
-    } else {
-      // Add new review item (review in 1 day)
-      reviewItems.push({
-        lessonId: currentLesson.id,
-        nextReview: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        interval: 1,
-        easeFactor: 2.5
-      });
-    }
+    // Add to review items (spaced repetition) only for non-image lessons
+    if (currentLesson.content.type !== 'image-lesson') {
+      const reviewItems = [...(progress.reviewItems || [])];
+      const existingReviewIndex = reviewItems.findIndex(item => item.lessonId === currentLesson.id);
+      
+      if (existingReviewIndex >= 0) {
+        const item = reviewItems[existingReviewIndex];
+        reviewItems[existingReviewIndex] = {
+          ...item,
+          interval: item.interval * item.easeFactor,
+          nextReview: new Date(Date.now() + item.interval * item.easeFactor * 24 * 60 * 60 * 1000).toISOString()
+        };
+      } else {
+        reviewItems.push({
+          lessonId: currentLesson.id,
+          nextReview: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          interval: 1,
+          easeFactor: 2.5
+        });
+      }
 
-    updates.reviewItems = reviewItems;
+      updates.reviewItems = reviewItems;
+    }
 
     updateProgress(updates);
     setShowLesson(false);
@@ -378,7 +386,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
     const reviewLessons = progress.reviewItems
       .filter(item => new Date(item.nextReview) <= new Date())
       .map(item => lessons.find(l => l.id === item.lessonId))
-      .filter(Boolean);
+      .filter((lesson): lesson is typeof lessons[number] => Boolean(lesson && lesson.content.type !== 'image-lesson'));
 
     return (
       <ReviewSession
@@ -514,7 +522,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
               {language === 'tr' ? `Ders ${progress.currentLessonOrder || 1}` : `Les ${progress.currentLessonOrder || 1}`}
             </p>
             <p className="text-sm text-gray-600">
-              {getLessonByOrder(progress.currentLessonOrder || 1)?.content.title || ''}
+              {getTitle(getLessonByOrder(progress.currentLessonOrder || 1))}
             </p>
           </div>
         </div>
@@ -546,7 +554,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
             <div className="text-center">
               <h2>{t.nextLesson}</h2>
               <p className="text-purple-100">
-                {getLessonByOrder(progress.currentLessonOrder || 1)?.content.title || ''}
+                {getTitle(getLessonByOrder(progress.currentLessonOrder || 1))}
               </p>
             </div>
           </div>
@@ -578,51 +586,20 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
         )}
       </div>
 
-      {/* Account, Leaderboard, Badges */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Account details */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 border-4 border-blue-200">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-blue-100 p-3 rounded-xl">
-              <User className="text-blue-600" size={22} />
-            </div>
-            <h2 className="text-blue-800">{t.account}</h2>
-          </div>
-          <div className="space-y-2 text-gray-700">
-            <div className="flex justify-between">
-              <span>{language === 'tr' ? 'İsim' : 'Naam'}</span>
-              <span className="font-semibold text-gray-900">{user.name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Username</span>
-              <span className="font-semibold text-gray-900">@{user.username}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>{language === 'tr' ? 'Rol' : 'Rol'}</span>
-              <span className="font-semibold text-gray-900">
-                {user.role === 'teacher'
-                  ? (language === 'tr' ? 'Öğretmen' : 'Leraar')
-                  : (language === 'tr' ? 'Öğrenci' : 'Student')}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>{language === 'tr' ? 'Tamamlanan Ders' : 'Voltooide Lessen'}</span>
-              <span className="font-semibold text-gray-900">{progress.completedLessons.length}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>{language === 'tr' ? 'Sıradaki Ders' : 'Volgende Les'}</span>
-              <span className="font-semibold text-gray-900">{progress.currentLessonOrder}</span>
-            </div>
-          </div>
-        </div>
-
+      {/* Leaderboard, Badges */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Leaderboard */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 border-4 border-yellow-200">
+        <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl shadow-lg p-6 border-4 border-yellow-200">
           <div className="flex items-center gap-3 mb-4">
             <div className="bg-yellow-100 p-3 rounded-xl">
               <Trophy className="text-yellow-600" size={22} />
             </div>
-            <h2 className="text-yellow-800">{t.leaderboard}</h2>
+            <div>
+              <h2 className="text-yellow-800">{t.leaderboard}</h2>
+              <p className="text-xs text-yellow-700">
+                {language === 'tr' ? 'En çok ders tamamlayanlar' : 'Top leerlingen op basis van voltooide lessen'}
+              </p>
+            </div>
           </div>
           {leaderboardLoading ? (
             <p className="text-gray-500">{language === 'tr' ? 'Yükleniyor...' : 'Laden...'}</p>
@@ -672,7 +649,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
         </div>
 
         {/* Badges */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 border-4 border-green-200">
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl shadow-lg p-6 border-4 border-green-200">
           <div className="flex items-center gap-3 mb-4">
             <div className="bg-green-100 p-3 rounded-xl">
               <Medal className="text-green-600" size={22} />
@@ -734,7 +711,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
                   const lesson = getLessonByOrder(lessonNum);
                   return (
                     <option key={lessonNum} value={lessonNum}>
-                      {t.lesson} {lessonNum}: {lesson?.content.title || ''}
+                      {t.lesson} {lessonNum}: {getTitle(lesson)}
                     </option>
                   );
                 })}

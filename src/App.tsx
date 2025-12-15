@@ -4,7 +4,8 @@ import Auth from './components/Auth';
 import StudentDashboard from './components/StudentDashboard';
 import TeacherDashboard from './components/TeacherDashboard';
 import WelcomeGuide from './components/WelcomeGuide';
-import { BookOpen, Users } from 'lucide-react';
+import { BookOpen, Users, User as UserIcon, LogOut } from 'lucide-react';
+import { Popover, PopoverTrigger, PopoverContent } from './components/ui/popover';
 
 export interface User {
   id: string;
@@ -29,7 +30,6 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
-    // Check if user is already logged in (from localStorage)
     const savedUser = localStorage.getItem('user');
     const savedToken = localStorage.getItem('accessToken');
     const savedLanguage = localStorage.getItem('language');
@@ -51,8 +51,7 @@ function App() {
     setAccessToken(token);
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.setItem('accessToken', token);
-    
-    // Show welcome guide on first login (check if user has seen it before)
+
     const hasSeenWelcome = localStorage.getItem(`welcome_${userData.id}`);
     if (!hasSeenWelcome) {
       setShowWelcome(true);
@@ -110,7 +109,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100">
-      {/* Header */}
       <header className="bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -132,7 +130,6 @@ function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Language Toggle */}
             <div className="flex bg-white border-2 border-purple-300 rounded-lg overflow-hidden">
               <button
                 onClick={() => handleLanguageChange('tr')}
@@ -156,18 +153,53 @@ function App() {
               </button>
             </div>
 
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-            >
-              {language === 'tr' ? 'Çıkış Yap' : 'Uitloggen'}
-            </button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-purple-300 rounded-xl hover:bg-purple-50 transition-colors">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center font-semibold">
+                    {user.name?.[0]?.toUpperCase() || <UserIcon size={18} />}
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm text-gray-800">{user.name}</p>
+                    <p className="text-xs text-gray-500">@{user.username}</p>
+                  </div>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-72">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center font-semibold">
+                      {user.name?.[0]?.toUpperCase() || <UserIcon size={18} />}
+                    </div>
+                    <div>
+                      <p className="text-gray-800 font-semibold">{user.name}</p>
+                      <p className="text-xs text-gray-500">@{user.username}</p>
+                      <p className="text-xs text-purple-600">
+                        {user.role === 'teacher'
+                          ? (language === 'tr' ? 'Öğretmen' : 'Leraar')
+                          : (language === 'tr' ? 'Öğrenci' : 'Student')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-600 bg-purple-50 border border-purple-100 rounded-xl p-3">
+                    {language === 'tr'
+                      ? 'Profil bilgilerinizi burada görebilirsiniz.'
+                      : 'Bekijk hier je profielgegevens.'}
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                  >
+                    <LogOut size={16} />
+                    {language === 'tr' ? 'Çıkış Yap' : 'Uitloggen'}
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         {user.role === 'student' ? (
           <StudentDashboard context={appContext} />
@@ -176,7 +208,6 @@ function App() {
         )}
       </main>
 
-      {/* Welcome Guide */}
       {showWelcome && (
         <WelcomeGuide
           role={user.role}
