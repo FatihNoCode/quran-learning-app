@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { projectId } from '../utils/supabase/info';
 import { AppContextType } from '../App';
-import { lessons, getLessonByOrder, getTotalLessons, getLessonsByLevel } from '../data/notionLessons';
+import seedLessons, { Lesson } from '../data/notionLessons';
+import { fetchContent } from '../utils/contentApi';
 import NewLessonViewer from './NewLessonViewer';
 import ReviewSession from './ReviewSession';
 import IslamicTrivia from './IslamicTrivia';
@@ -129,6 +130,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
   const { user, accessToken, language } = context;
   const [progress, setProgress] = useState<Progress | null>(null);
   const [loading, setLoading] = useState(true);
+  const [contentLoading, setContentLoading] = useState(false);
   const [showLesson, setShowLesson] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const [activeTab, setActiveTab] = useState<'lessons' | 'trivia'>('lessons');
@@ -137,6 +139,8 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
   const [resetting, setResetting] = useState(false);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [lessonData, setLessonData] = useState<Lesson[]>(seedLessons);
+  const [contentMeta, setContentMeta] = useState<{ lastEditedAt?: string; lastEditedBy?: string }>({});
 
   const t = translations[language];
   const getTitle = (lessonObj: any) =>
@@ -147,6 +151,37 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
     language === 'nl'
       ? (lessonObj?.content?.instructionNl || lessonObj?.content?.instruction || '')
       : (lessonObj?.content?.instruction || '');
+  const totalLessons = Math.max(lessonData.length || seedLessons.length, 1);
+  const getLessonByOrderLocal = (order: number) =>
+    (lessonData || seedLessons).find((lesson) => lesson.order === order);
+  const getLessonsByLevelLocal = (level: string) =>
+    (lessonData || seedLessons).filter((lesson) => lesson.level === level);
+  const toReviewLesson = (lesson: Lesson) => {
+    const letterFromGroups = lesson.content.letterGroups?.[0]?.[0];
+    const letterFromItems = lesson.content.items?.[0]?.arabic;
+    const letter = letterFromGroups || letterFromItems || '';
+
+    return {
+      ...lesson,
+      title: {
+        tr: lesson.content.title,
+        nl: lesson.content.titleNl || lesson.content.title,
+      },
+      description: {
+        tr: lesson.content.instruction || '',
+        nl: lesson.content.instructionNl || lesson.content.instruction || '',
+      },
+      content: {
+        ...lesson.content,
+        letter,
+        pronunciation: letter || lesson.content.items?.[0]?.transliteration || '',
+        examples:
+          lesson.content.items?.map((item) => item.arabic) ??
+          lesson.content.letterGroups?.flat() ??
+          [],
+      },
+    } as any;
+  };
 
   useEffect(() => {
     fetchProgress();
@@ -155,6 +190,21 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
   useEffect(() => {
     if (accessToken) {
       fetchLeaderboard();
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (progress && lessonData.length > 0) {
+      const safeOrder = Math.min(progress.currentLessonOrder || 1, lessonData.length);
+      if (safeOrder !== (progress.currentLessonOrder || 1)) {
+        setProgress({ ...progress, currentLessonOrder: safeOrder });
+      }
+    }
+  }, [lessonData.length]);
+
+  useEffect(() => {
+    if (accessToken) {
+      loadContent();
     }
   }, [accessToken]);
 
@@ -187,6 +237,25 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
     }
   };
 
+  const loadContent = async () => {
+    setContentLoading(true);
+    try {
+      const content = await fetchContent(accessToken);
+      if (content.lessons?.length) {
+        setLessonData(content.lessons);
+      }
+      setContentMeta({
+        lastEditedAt: content.lastEditedAt,
+        lastEditedBy: content.lastEditedBy,
+      });
+    } catch (error) {
+      console.error('Error loading content:', error instanceof Error ? error.message : error);
+      setLessonData(seedLessons);
+    } finally {
+      setContentLoading(false);
+    }
+  };
+
   const fetchLeaderboard = async () => {
     setLeaderboardLoading(true);
     try {
@@ -216,7 +285,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
           userId: user.id,
           username: user.username,
           name: user.name,
-          completedLessons: progress?.completedLessons.length || 0,
+          completedLessons: completedLessonIds.length,
           currentLessonOrder: progress?.currentLessonOrder || 1
         }]);
       }
@@ -226,7 +295,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
         userId: user.id,
         username: user.username,
         name: user.name,
-        completedLessons: progress?.completedLessons.length || 0,
+        completedLessons: completedLessonIds.length,
         currentLessonOrder: progress?.currentLessonOrder || 1
       }]);
     } finally {
@@ -263,10 +332,13 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
     if (!progress) return;
 
     // Get current lesson from new system
-    const currentLesson = getLessonByOrder(progress.currentLessonOrder || 1);
+    const currentLesson = getLessonByOrderLocal(progress.currentLessonOrder || 1);
     if (!currentLesson) return;
 
-    const completedLessons = [...progress.completedLessons, currentLesson.id];
+    const baseCompleted = (progress.completedLessons || []).filter((id) =>
+      lessonData.some((lesson) => lesson.id === id)
+    );
+    const completedLessons = Array.from(new Set([...baseCompleted, currentLesson.id]));
     
     // Move to next lesson in sequence
     const nextLessonOrder = (progress.currentLessonOrder || 1) + 1;
@@ -354,9 +426,13 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
     );
   }
 
+  const completedLessonIds = (progress.completedLessons || []).filter((id) =>
+    lessonData.some((lesson) => lesson.id === id)
+  );
+
   if (showLesson) {
     // Use NEW lesson system - sequential lessons
-    const currentLesson = getLessonByOrder(progress.currentLessonOrder || 1);
+    const currentLesson = getLessonByOrderLocal(progress.currentLessonOrder || 1);
     
     if (!currentLesson) {
       return (
@@ -385,8 +461,9 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
   if (showReview) {
     const reviewLessons = progress.reviewItems
       .filter(item => new Date(item.nextReview) <= new Date())
-      .map(item => lessons.find(l => l.id === item.lessonId))
-      .filter((lesson): lesson is typeof lessons[number] => Boolean(lesson && lesson.content.type !== 'image-lesson'));
+      .map(item => lessonData.find(l => l.id === item.lessonId))
+      .filter((lesson): lesson is Lesson => Boolean(lesson && lesson.content.type !== 'image-lesson'))
+      .map((lesson) => toReviewLesson(lesson));
 
     return (
       <ReviewSession
@@ -404,9 +481,9 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
   ).length || 0;
 
   // Calculate level progress
-  const currentLevelLessons = getLessonsByLevel(progress.currentLevel);
+  const currentLevelLessons = getLessonsByLevelLocal(progress.currentLevel);
   const levelCompletedCount = currentLevelLessons.filter(
-    lesson => progress.completedLessons.includes(lesson.id)
+    lesson => completedLessonIds.includes(lesson.id)
   ).length;
   const levelProgressPercent = currentLevelLessons.length
     ? (levelCompletedCount / currentLevelLessons.length) * 100
@@ -419,19 +496,19 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
       id: 'lesson-starter',
       title: t.badgeLessonStarter,
       description: t.badgeLessonStarterDesc,
-      unlocked: progress.completedLessons.length >= 1
+      unlocked: completedLessonIds.length >= 1
     },
     {
       id: 'lesson-explorer',
       title: t.badgeLessonExplorer,
       description: t.badgeLessonExplorerDesc,
-      unlocked: progress.completedLessons.length >= 5
+      unlocked: completedLessonIds.length >= 5
     },
     {
       id: 'lesson-pro',
       title: t.badgeLessonPro,
       description: t.badgeLessonProDesc,
-      unlocked: progress.completedLessons.length >= 10
+      unlocked: completedLessonIds.length >= 10
     },
     {
       id: 'review-hero',
@@ -443,7 +520,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
       id: 'consistency',
       title: t.badgeConsistency,
       description: t.badgeConsistencyDesc,
-      unlocked: progress.completedLessons.length >= 7
+      unlocked: completedLessonIds.length >= 7
     }
   ];
 
@@ -498,12 +575,12 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
           <div className="space-y-2">
             <p className="text-gray-600">{t.totalCompleted}</p>
             <p className="text-purple-800">
-              {progress.completedLessons.length} / {getTotalLessons()} {t.lessons}
+              {completedLessonIds.length} / {totalLessons} {t.lessons}
             </p>
             <div className="w-full bg-gray-200 rounded-full h-3 mt-2">
               <div
                 className="bg-gradient-to-r from-purple-400 to-purple-600 h-3 rounded-full transition-all"
-                style={{ width: `${(progress.completedLessons.length / getTotalLessons()) * 100}%` }}
+                style={{ width: `${(completedLessonIds.length / totalLessons) * 100}%` }}
               />
             </div>
           </div>
@@ -522,7 +599,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
               {language === 'tr' ? `Ders ${progress.currentLessonOrder || 1}` : `Les ${progress.currentLessonOrder || 1}`}
             </p>
             <p className="text-sm text-gray-600">
-              {getTitle(getLessonByOrder(progress.currentLessonOrder || 1))}
+              {getTitle(getLessonByOrderLocal(progress.currentLessonOrder || 1))}
             </p>
           </div>
         </div>
@@ -548,17 +625,17 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Continue Learning */}
         <div className="md:col-span-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-2xl p-8 text-white transform hover:scale-105 transition-transform cursor-pointer"
-          onClick={() => setShowLesson(true)}
-        >
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <div className="text-center">
-              <h2>{t.nextLesson}</h2>
-              <p className="text-purple-100">
-                {getTitle(getLessonByOrder(progress.currentLessonOrder || 1))}
-              </p>
+            onClick={() => setShowLesson(true)}
+          >
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <div className="text-center">
+                <h2>{t.nextLesson}</h2>
+                <p className="text-purple-100">
+                  {getTitle(getLessonByOrderLocal(progress.currentLessonOrder || 1))}
+                </p>
+              </div>
             </div>
-          </div>
-          <button className="w-full bg-white text-purple-600 py-4 rounded-xl hover:bg-purple-50 transition-colors">
+            <button className="w-full bg-white text-purple-600 py-4 rounded-xl hover:bg-purple-50 transition-colors">
             {t.continueLesson}
           </button>
         </div>
@@ -632,7 +709,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
                     </div>
                     <div className="text-right">
                       <p className="text-purple-700 font-semibold">
-                        {entry.completedLessons} / {getTotalLessons()}
+                        {entry.completedLessons} / {totalLessons}
                       </p>
                       <p className="text-xs text-gray-500">{language === 'tr' ? 'Ders' : 'Les'}</p>
                     </div>
@@ -708,7 +785,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-purple-500"
               >
                 {Array.from({ length: progress.currentLessonOrder || 1 }, (_, i) => i + 1).map(lessonNum => {
-                  const lesson = getLessonByOrder(lessonNum);
+                  const lesson = getLessonByOrderLocal(lessonNum);
                   return (
                     <option key={lessonNum} value={lessonNum}>
                       {t.lesson} {lessonNum}: {getTitle(lesson)}

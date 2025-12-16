@@ -4,6 +4,8 @@ import { AppContextType } from '../App';
 import { LESSON_LEVELS, lessons } from '../data/lessons';
 import { Users, TrendingUp, Clock, Award, BookOpen, BarChart, Trash2, Unlock, Eye, EyeOff, Shield } from 'lucide-react';
 import StudentManagement from './StudentManagement';
+import LessonQuizPanel from './LessonQuizPanel';
+import { fetchContent } from '../utils/contentApi';
 
 interface TeacherDashboardProps {
   context: AppContextType;
@@ -32,34 +34,35 @@ interface TeacherData {
 
 const translations = {
   tr: {
-    dashboard: 'Öğretmen Paneli',
-    students: 'Öğrenciler',
-    teachers: 'Öğretmenler',
-    overview: 'Genel Bakış',
-    totalStudents: 'Toplam Öğrenci',
-    avgProgress: 'Ortalama İlerleme',
-    activeToday: 'Bugün Aktif',
-    studentList: 'Öğrenci Listesi',
-    teacherList: 'Öğretmen Listesi',
-    name: 'İsim',
+    dashboard: '??retmen Paneli',
+    students: '??renciler',
+    teachers: '??retmenler',
+    overview: 'Genel Bak??',
+    totalStudents: 'Toplam ??renci',
+    avgProgress: 'Ortalama ?lerleme',
+    activeToday: 'Bug?n Aktif',
+    studentList: '??renci Listesi',
+    teacherList: '??retmen Listesi',
+    name: '?sim',
     level: 'Seviye',
-    progress: 'İlerleme',
+    progress: '?lerleme',
     lastActive: 'Son Aktif',
     completed: 'Tamamlanan',
     lessons: 'Ders',
-    loading: 'Yükleniyor...',
-    noStudents: 'Henüz öğrenci yok',
-    noTeachers: 'Başka öğretmen yok',
-    today: 'Bugün',
-    yesterday: 'Dün',
-    daysAgo: 'gün önce',
-    actions: 'İşlemler',
-    masterTeacher: 'Ana Öğretmen',
-    regularTeacher: 'Öğretmen',
-    deleteTeacher: 'Öğretmeni Sil',
-    confirmDeleteTeacher: 'Bu öğretmeni silmek istediğinizden emin misiniz?',
-    username: 'Kullanıcı Adı',
-    type: 'Tip'
+    loading: 'Y?kleniyor...',
+    noStudents: 'Hen?z ??renci yok',
+    noTeachers: 'Ba?ka ??retmen yok',
+    today: 'Bug?n',
+    yesterday: 'D?n',
+    daysAgo: 'g?n ?nce',
+    actions: '??lemler',
+    masterTeacher: 'Ana ??retmen',
+    regularTeacher: '??retmen',
+    deleteTeacher: '??retmeni Sil',
+    confirmDeleteTeacher: 'Bu ??retmeni silmek istedi?inizden emin misiniz?',
+    username: 'Kullan?c? Ad?',
+    type: 'Tip',
+    content: 'Ders/Quiz Paneli'
   },
   nl: {
     dashboard: 'Leraar Dashboard',
@@ -89,7 +92,8 @@ const translations = {
     deleteTeacher: 'Leraar Verwijderen',
     confirmDeleteTeacher: 'Weet je zeker dat je deze leraar wilt verwijderen?',
     username: 'Gebruikersnaam',
-    type: 'Type'
+    type: 'Type',
+    content: 'Les- en quizpaneel'
   }
 };
 
@@ -98,7 +102,9 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
   const [students, setStudents] = useState<StudentProgress[]>([]);
   const [teachers, setTeachers] = useState<TeacherData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'students' | 'teachers'>('students');
+  const [contentLessons, setContentLessons] = useState(lessons);
+  const [lessonCount, setLessonCount] = useState(lessons.length);
+  const [activeTab, setActiveTab] = useState<'students' | 'teachers' | 'content'>('students');
 
   const t = translations[language];
   const isMasterTeacher = user.isMasterTeacher || false;
@@ -109,6 +115,12 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
       fetchTeachers();
     }
   }, [accessToken, isMasterTeacher]);
+
+  useEffect(() => {
+    if (accessToken) {
+      loadContentSummary();
+    }
+  }, [accessToken]);
 
   const fetchStudents = async () => {
     try {
@@ -176,6 +188,18 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
     }
   };
 
+  const loadContentSummary = async () => {
+    try {
+      const content = await fetchContent(accessToken);
+      if (content.lessons?.length) {
+        setContentLessons(content.lessons as any);
+        setLessonCount(content.lessons.length);
+      }
+    } catch (error) {
+      console.error('Error loading content:', error instanceof Error ? error.message : error);
+    }
+  };
+
   const handleDeleteTeacher = async (teacherId: string) => {
     try {
       const response = await fetch(
@@ -225,8 +249,12 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
   }
 
   const totalStudents = students.length;
+  const safeLessonCount = Math.max(lessonCount, 1);
+  const lessonIdSet = new Set((contentLessons.length ? contentLessons : lessons).map((l) => l.id));
+  const normalizeCompletedCount = (list: string[] = []) =>
+    list.filter((id) => lessonIdSet.has(id)).length;
   const avgProgress = students.length > 0
-    ? students.reduce((sum, s) => sum + s.completedLessons.length, 0) / students.length
+    ? students.reduce((sum, s) => sum + normalizeCompletedCount(s.completedLessons), 0) / students.length
     : 0;
   const activeToday = students.filter(s => {
     const lastActive = new Date(s.lastActive);
@@ -234,7 +262,13 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
     return lastActive.toDateString() === today.toDateString();
   }).length;
 
-  const avgProgressPercent = (avgProgress / lessons.length) * 100;
+  const avgProgressPercent = (avgProgress / safeLessonCount) * 100;
+  const sourceLevels = contentLessons.length ? contentLessons : lessons;
+  const levelSet = Array.from(new Set(sourceLevels.map((lesson) => lesson.level)));
+  const dynamicLevels = levelSet.reduce((acc, level) => {
+    acc[level] = { tr: level, nl: level };
+    return acc;
+  }, {} as Record<string, { tr: string; nl: string }>);
 
   return (
     <div className="space-y-6">
@@ -272,7 +306,7 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
           </div>
           <div className="space-y-2">
             <p className="text-green-800">
-              {avgProgress.toFixed(1)} / {lessons.length} {t.lessons}
+              {avgProgress.toFixed(1)} / {lessonCount} {t.lessons}
             </p>
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div
@@ -311,6 +345,12 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
               {t.teachers}
             </button>
           )}
+          <button
+            className={`px-4 py-2 rounded-full ${activeTab === 'content' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'}`}
+            onClick={() => setActiveTab('content')}
+          >
+            {t.content}
+          </button>
         </div>
 
         {/* Students Table */}
@@ -335,7 +375,8 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {students.map((student) => {
-                      const progressPercent = (student.completedLessons.length / lessons.length) * 100;
+                      const completedCount = normalizeCompletedCount(student.completedLessons);
+                      const progressPercent = (completedCount / safeLessonCount) * 100;
                       
                       return (
                         <tr key={student.userId} className="hover:bg-purple-50 transition-colors">
@@ -354,20 +395,22 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
                             <div className="flex items-center gap-2">
                               <BookOpen className="text-purple-600" size={16} />
                               <span className="text-gray-700">
-                                {LESSON_LEVELS[student.currentLevel as keyof typeof LESSON_LEVELS]?.[language] || student.currentLevel}
+                                {dynamicLevels[student.currentLevel]?.[language] ||
+                                  LESSON_LEVELS[student.currentLevel as keyof typeof LESSON_LEVELS]?.[language] ||
+                                  student.currentLevel}
                               </span>
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-600">
-                                  {student.completedLessons.length} / {lessons.length}
-                                </span>
-                                <span className="text-purple-600">
-                                  {progressPercent.toFixed(0)}%
-                                </span>
-                              </div>
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-gray-600">
+                                    {completedCount} / {lessonCount}
+                                  </span>
+                                  <span className="text-purple-600">
+                                    {progressPercent.toFixed(0)}%
+                                  </span>
+                                </div>
                               <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div
                                   className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all"
@@ -465,6 +508,16 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
             )}
           </div>
         )}
+
+        {activeTab === 'content' && (
+          <LessonQuizPanel
+            accessToken={accessToken}
+            language={language}
+            isMasterTeacher={isMasterTeacher}
+            user={user}
+            students={students}
+          />
+        )}
       </div>
 
       {/* Level Distribution Chart */}
@@ -480,7 +533,7 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {Object.entries(LESSON_LEVELS).map(([key, value]) => {
+            {Object.entries(dynamicLevels).map(([key, value]) => {
               const count = students.filter(s => s.currentLevel === key).length;
               const percentage = totalStudents > 0 ? (count / totalStudents) * 100 : 0;
 

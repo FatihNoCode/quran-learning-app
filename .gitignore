@@ -7,3 +7,5 @@ dist/
 *.zip
 *.env
 *.env.*
+gen-lang-client-*.json
+.env*
