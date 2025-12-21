@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
-import { BookOpen, UserPlus, LogIn, Sparkles, Info } from 'lucide-react';
+import { UserPlus, LogIn, Sparkles, Info, Eye, EyeOff } from 'lucide-react';
 import type { User } from '../App';
 import { DEMO_INFO } from '../utils/demoAccounts';
+import { Logo } from './Logo.svg';
 
 interface AuthProps {
   onLogin: (user: User, token: string) => void;
@@ -18,6 +19,7 @@ const translations = {
     signup: 'Kayıt Ol',
     username: 'Kullanıcı Adı',
     password: 'Şifre',
+    confirmPassword: 'Şifreyi Onayla',
     name: 'İsim',
     role: 'Rol',
     student: 'Öğrenci',
@@ -32,7 +34,13 @@ const translations = {
     usernameExists: 'Bu kullanıcı adı zaten kullanılıyor',
     invalidCredentials: 'Kullanıcı adı veya şifre hatalı',
     invalidTeacherCode: 'Geçersiz öğretmen kodu',
-    missingFields: 'Lütfen tüm alanları doldurun'
+    missingFields: 'Lütfen tüm alanları doldurun',
+    usernameFormat: 'Kullanıcı adınız adınız ve soyadınızdan oluşmalıdır (örn: YunusYildiz). Sadece ad ve soyad içermeyen kullanıcı adları silinecektir.',
+    passwordsDontMatch: 'Şifreler eşleşmiyor',
+    passwordRequirements: 'Şifre en az 8 karakter, bir büyük harf ve bir özel karakter veya rakam içermelidir',
+    passwordTooShort: 'Şifre en az 8 karakter olmalıdır',
+    passwordNeedsUppercase: 'Şifre en az bir büyük harf içermelidir',
+    passwordNeedsSpecial: 'Şifre en az bir özel karakter veya rakam içermelidir'
   },
   nl: {
     title: 'Arabisch Lezen Leren',
@@ -41,6 +49,7 @@ const translations = {
     signup: 'Registreren',
     username: 'Gebruikersnaam',
     password: 'Wachtwoord',
+    confirmPassword: 'Bevestig Wachtwoord',
     name: 'Naam',
     role: 'Rol',
     student: 'Student',
@@ -55,7 +64,13 @@ const translations = {
     usernameExists: 'Deze gebruikersnaam is al in gebruik',
     invalidCredentials: 'Gebruikersnaam of wachtwoord is onjuist',
     invalidTeacherCode: 'Ongeldige leraarcode',
-    missingFields: 'Vul alle velden in'
+    missingFields: 'Vul alle velden in',
+    usernameFormat: 'Uw gebruikersnaam moet bestaan uit uw voornaam en achternaam (bijv: YunusYildiz). Gebruikersnamen die andere woorden bevatten dan voor- en achternaam worden verwijderd.',
+    passwordsDontMatch: 'Wachtwoorden komen niet overeen',
+    passwordRequirements: 'Wachtwoord moet minimaal 8 tekens, één hoofdletter en één speciaal teken of cijfer bevatten',
+    passwordTooShort: 'Wachtwoord moet minimaal 8 tekens bevatten',
+    passwordNeedsUppercase: 'Wachtwoord moet minimaal één hoofdletter bevatten',
+    passwordNeedsSpecial: 'Wachtwoord moet minimaal één speciaal teken of cijfer bevatten'
   }
 };
 
@@ -63,12 +78,15 @@ export default function Auth({ onLogin, language, onLanguageChange }: AuthProps)
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [teacherCode, setTeacherCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showDemoInfo, setShowDemoInfo] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const t = translations[language];
   const demoInfo = DEMO_INFO[language];
@@ -98,12 +116,43 @@ export default function Auth({ onLogin, language, onLanguageChange }: AuthProps)
     e.preventDefault();
     setError('');
     setLoading(true);
+    
+    // Validate password requirements on signup
+    if (!isLogin) {
+      // Check if passwords match
+      if (password !== confirmPassword) {
+        setError(t.passwordsDontMatch);
+        setLoading(false);
+        return;
+      }
+      
+      // Check password length
+      if (password.length < 8) {
+        setError(t.passwordTooShort);
+        setLoading(false);
+        return;
+      }
+      
+      // Check for uppercase letter
+      if (!/[A-Z]/.test(password)) {
+        setError(t.passwordNeedsUppercase);
+        setLoading(false);
+        return;
+      }
+      
+      // Check for special character or number
+      if (!/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+        setError(t.passwordNeedsSpecial);
+        setLoading(false);
+        return;
+      }
+    }
 
     try {
       const endpoint = isLogin ? 'signin' : 'signup';
       const body = isLogin
-        ? { username, password }
-        : { username, password, name, role, teacherCode };
+        ? { username: username.toLowerCase(), password }
+        : { username: username.toLowerCase(), password, name, role, teacherCode };
 
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-33549613/${endpoint}`,
@@ -178,7 +227,7 @@ export default function Auth({ onLogin, language, onLanguageChange }: AuthProps)
         {/* Header with Islamic Pattern */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-3xl mb-4 shadow-2xl transform hover:scale-105 transition-transform">
-            <BookOpen className="text-white" size={48} />
+            <Logo className="text-white" size={48} />
           </div>
           <h1 className="text-purple-800 mb-2 flex items-center justify-center gap-2">
             {t.title}
@@ -241,23 +290,68 @@ export default function Auth({ onLogin, language, onLanguageChange }: AuthProps)
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 transition-colors"
                 required
-                placeholder={language === 'tr' ? 'kullaniciadi' : 'gebruikersnaam'}
               />
+              {!isLogin && (
+                <div className="mt-2 flex items-start gap-2 text-sm text-purple-600 bg-purple-50 p-3 rounded-lg border border-purple-200">
+                  <Info size={16} className="mt-0.5 flex-shrink-0" />
+                  <p>{t.usernameFormat}</p>
+                </div>
+              )}
             </div>
 
             <div>
               <label className="block text-purple-700 mb-2">
                 {t.password}
               </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 transition-colors"
-                required
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 transition-colors"
+                  required
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-3 text-purple-600 hover:text-purple-800"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+              {!isLogin && (
+                <div className="mt-2 flex items-start gap-2 text-sm text-purple-600 bg-purple-50 p-3 rounded-lg border border-purple-200">
+                  <Info size={16} className="mt-0.5 flex-shrink-0" />
+                  <p>{t.passwordRequirements}</p>
+                </div>
+              )}
             </div>
+
+            {!isLogin && (
+              <div>
+                <label className="block text-purple-700 mb-2">
+                  {t.confirmPassword}
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 transition-colors"
+                    required
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-3 text-purple-600 hover:text-purple-800"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {!isLogin && (
               <div>
