@@ -7,7 +7,6 @@ import {
   saveQuiz,
   deleteQuiz,
   QuizRecord,
-  requestAiSuggestion,
 } from '../utils/contentApi';
 import { User } from '../App';
 import {
@@ -18,7 +17,6 @@ import {
   Save,
   Trash2,
   Plus,
-  Wand2,
   Loader2,
   BarChart3,
 } from 'lucide-react';
@@ -80,9 +78,6 @@ export default function LessonQuizPanel({
   const [lastEdited, setLastEdited] = useState<{ by?: string; at?: string }>({});
   const [lessonForm, setLessonForm] = useState<Partial<Lesson>>(defaultLesson(1));
   const [quizForm, setQuizForm] = useState<Partial<QuizRecord>>(defaultQuiz);
-  const [aiTopic, setAiTopic] = useState('');
-  const [aiResult, setAiResult] = useState<any>(null);
-  const [aiLoading, setAiLoading] = useState(false);
 
   const masterLockLabel =
     language === 'tr' ? 'Sadece ana öğretmen düzenleyebilir' : 'Alleen hoofdleraar mag wijzigen';
@@ -172,27 +167,6 @@ export default function LessonQuizPanel({
     }
   };
 
-  const askAi = async () => {
-    if (!aiTopic) return;
-    setAiLoading(true);
-    setError(null);
-    try {
-      const res = await requestAiSuggestion({ topic: aiTopic, type: 'lesson' }, accessToken);
-      setAiResult(res.suggestion);
-      setStatus(
-        res.configured
-          ? (language === 'tr' ? 'AI önerisi hazır' : 'AI voorstel klaar')
-          : (language === 'tr'
-            ? 'AI yapılandırılmadı, taslak öneri gösteriliyor.'
-            : 'AI niet gekoppeld, voorbeeldvoorstel getoond.')
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'AI isteği başarısız');
-    } finally {
-      setAiLoading(false);
-      setTimeout(() => setStatus(null), 1500);
-    }
-  };
 
   const lessonCompletion = useMemo(() => {
     return lessons.map((lesson) => {
@@ -457,37 +431,6 @@ export default function LessonQuizPanel({
         </div>
 
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl shadow-lg p-4 border-4 border-orange-200">
-            <div className="flex items-center gap-2 mb-3">
-              <Wand2 className="text-orange-500" size={18} />
-              <p className="text-gray-800 font-semibold">AI</p>
-            </div>
-            <input
-              className="w-full px-3 py-2 border rounded-lg mb-2"
-              placeholder={language === 'tr' ? 'Konu / hedef' : 'Onderwerp / doel'}
-              value={aiTopic}
-              onChange={(e) => setAiTopic(e.target.value)}
-            />
-            <button
-              className="w-full px-4 py-2 bg-orange-500 text-white rounded-xl hover:bg-orange-600 flex items-center justify-center gap-2 disabled:opacity-50"
-              onClick={askAi}
-              disabled={aiLoading}
-            >
-              {aiLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {language === 'tr' ? 'AI önerisi al' : 'Vraag AI om suggestie'}
-            </button>
-            {aiResult && (
-              <div className="mt-3 bg-orange-50 border border-orange-100 rounded-xl p-3 text-sm text-gray-700 space-y-2">
-                <p className="font-semibold">{aiResult.title}</p>
-                <ul className="list-disc list-inside space-y-1">
-                  {(aiResult.outline || []).map((line: string, idx: number) => (
-                    <li key={idx}>{line}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-
           <div className="bg-white rounded-2xl shadow-lg p-4 border-4 border-emerald-200">
             <div className="flex items-center gap-2 mb-3">
               <BarChart3 className="text-emerald-600" size={18} />

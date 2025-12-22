@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { AppContextType } from '../App';
 import { lessons as notionLessons, getLessonByOrder } from '../data/notionLessons';
 import { placeholderLessons } from '../data/placeholderLessons';
@@ -20,24 +20,22 @@ type ActivityView = 'dashboard' | 'lesson' | 'practice' | 'profile';
 
 interface NewStudentDashboardProps {
   context: AppContextType;
-  homeSignal?: number;
+  onViewChange?: (view: ActivityView) => void;
 }
 
-export default function NewStudentDashboard({ context, homeSignal }: NewStudentDashboardProps) {
+export default function NewStudentDashboard({ context, onViewChange }: NewStudentDashboardProps) {
   const [currentView, setCurrentView] = useState<ActivityView>('dashboard');
   const [progress, setProgress] = useState<StudentProgress | null>(null);
   const [loading, setLoading] = useState(true);
-  const homeSignalRef = useRef<number>();
 
   const { user, accessToken, language } = context;
 
+  // Notify parent when view changes
   useEffect(() => {
-    if (homeSignal === undefined) return;
-    if (homeSignalRef.current !== homeSignal) {
-      setCurrentView('dashboard');
-      homeSignalRef.current = homeSignal;
+    if (onViewChange) {
+      onViewChange(currentView);
     }
-  }, [homeSignal]);
+  }, [currentView, onViewChange]);
 
   // Fetch progress from backend
   useEffect(() => {

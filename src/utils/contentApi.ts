@@ -86,15 +86,3 @@ export const deleteQuiz = (quizId: string, accessToken: string) =>
     accessToken
   });
 
-export const requestAiSuggestion = (
-  params: { topic?: string; type?: 'lesson' | 'quiz' },
-  accessToken: string
-) =>
-  apiRequest<{ suggestion: any; configured: boolean; requestedBy: string; type: string }>(
-    '/ai/suggest',
-    {
-      method: 'POST',
-      accessToken,
-      body: JSON.stringify(params)
-    }
-  );

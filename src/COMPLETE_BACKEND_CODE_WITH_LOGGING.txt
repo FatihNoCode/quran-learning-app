@@ -1,0 +1,590 @@
+import { Hono } from "npm:hono";
+import { cors } from "npm:hono/cors";
+import { logger } from "npm:hono/logger";
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+// Teacher registration codes
+const TEACHER_REGISTRATION_CODE = "QURAN2024";
+const MASTER_TEACHER_CODE = "MASTER2024";
+
+const app = new Hono();
+
+// Enable logger
+app.use('*', logger(console.log));
+
+// Enable CORS for all routes and methods
+app.use(
+  "/*",
+  cors({
+    origin: "*",
+    allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    exposeHeaders: ["Content-Length"],
+    maxAge: 600,
+  }),
+);
+
+// Health check endpoint
+app.get("/make-server-33549613/health", (c) => {
+  return c.json({ status: "ok" });
+});
+
+// Sign up endpoint - creates a new user
+app.post("/make-server-33549613/signup", async (c) => {
+  try {
+    const { username, password, name, role, teacherCode } = await c.req.json();
+    
+    console.log('📝 Signup request received:', { username, role, hasPassword: !!password, hasName: !!name });
+    
+    if (!username || !password || !name || !role) {
+      console.log('❌ Missing fields:', { username: !!username, password: !!password, name: !!name, role: !!role });
+      return c.json({ error: "Missing required fields" }, 400);
+    }
+
+    let actualRole = role;
+    let isMasterTeacher = false;
+
+    // If teacher, check registration code
+    if (role === 'teacher') {
+      if (!teacherCode) {
+        return c.json({ error: "Teacher code is required" }, 400);
+      }
+      
+      if (teacherCode === MASTER_TEACHER_CODE) {
+        isMasterTeacher = true;
+      } else if (teacherCode !== TEACHER_REGISTRATION_CODE) {
+        return c.json({ error: "Invalid teacher registration code" }, 400);
+      }
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    // Check if username already exists in our users table (case-insensitive)
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('username')
+      .eq('username', username.toLowerCase())
+      .single();
+    
+    if (existingUser) {
+      return c.json({ error: "Username already exists" }, 400);
+    }
+
+    // Create auth user with email (using username@arabic-learning.app as email)
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: `${username.toLowerCase()}@arabic-learning.app`,
+      password: password,
+      user_metadata: { username: username.toLowerCase(), name, role: actualRole, isMasterTeacher },
+      email_confirm: true
+    });
+
+    if (authError) {
+      console.log(`❌ Error creating auth user: ${authError.message}`);
+      return c.json({ error: authError.message }, 400);
+    }
+
+    const authId = authData.user.id;
+    console.log('✅ Auth user created:', authId);
+
+    // Insert user into users table
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .insert({
+        auth_id: authId,
+        username: username.toLowerCase(),
+        role: actualRole,
+        is_master_teacher: isMasterTeacher
+      })
+      .select()
+      .single();
+
+    if (userError) {
+      console.log(`❌ Error creating user record: ${userError.message}`);
+      // Clean up auth user if database insert fails
+      await supabase.auth.admin.deleteUser(authId);
+      return c.json({ error: userError.message }, 400);
+    }
+
+    console.log('✅ User record created:', userData.id);
+
+    // If student, initialize progress
+    if (role === 'student') {
+      const { error: progressError } = await supabase
+        .from('student_progress')
+        .insert({
+          user_id: userData.id,
+          username: username.toLowerCase(),
+          current_lesson_order: 1,
+          completed_lessons: [],
+          skill_mastery: {},
+          review_queue: [],
+          total_points: 0,
+          badges: [],
+          stats: {
+            totalQuizzesCompleted: 0,
+            averageAccuracy: 0,
+            currentStreak: 0,
+            bestStreak: 0,
+            lastActive: new Date().toISOString()
+          }
+        });
+
+      if (progressError) {
+        console.log(`⚠️ Error creating student progress: ${progressError.message}`);
+      } else {
+        console.log('✅ Student progress initialized');
+      }
+    }
+
+    // Sign in the user and get access token
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: `${username.toLowerCase()}@arabic-learning.app`,
+      password: password,
+    });
+
+    if (signInError || !signInData.session) {
+      console.log(`⚠️ Error signing in after signup: ${signInError?.message}`);
+      // If auto-login fails, still return success but tell user to login manually
+      return c.json({ 
+        success: true, 
+        message: 'User created successfully. Please login with your credentials.',
+        requiresManualLogin: true
+      }, 201);
+    }
+
+    console.log('✅ User signed in successfully');
+
+    return c.json({ 
+      success: true, 
+      accessToken: signInData.session.access_token,
+      user: {
+        id: userData.id,
+        username: userData.username,
+        name: name,
+        role: userData.role,
+        isMasterTeacher: userData.is_master_teacher || false
+      }
+    });
+  } catch (error) {
+    console.log(`❌ Error in signup endpoint: ${error.message}`);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Sign in endpoint
+app.post("/make-server-33549613/signin", async (c) => {
+  try {
+    const { username, password } = await c.req.json();
+
+    console.log('🔐 Signin request received for username:', username);
+
+    if (!username || !password) {
+      return c.json({ error: "Missing username or password" }, 400);
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+    );
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: `${username.toLowerCase()}@arabic-learning.app`,
+      password: password,
+    });
+
+    if (error) {
+      console.log(`❌ Error during sign in: ${error.message}`);
+      return c.json({ error: "Invalid username or password" }, 401);
+    }
+
+    console.log('✅ Auth successful, user ID:', data.user.id);
+
+    // Get user data from users table using service role key
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+    
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('auth_id', data.user.id)
+      .single();
+    
+    if (userError || !userData) {
+      console.log(`⚠️ User not found in users table, checking by username...`);
+      
+      // Try to find by username (case-insensitive)
+      const { data: userByUsername, error: usernameError } = await supabaseAdmin
+        .from('users')
+        .select('*')
+        .eq('username', username.toLowerCase())
+        .single();
+      
+      if (usernameError || !userByUsername) {
+        console.log(`❌ User data not found anywhere, creating new user record...`);
+        
+        // Create user record if it doesn't exist
+        const { data: newUser, error: createError } = await supabaseAdmin
+          .from('users')
+          .insert({
+            auth_id: data.user.id,
+            username: username.toLowerCase(),
+            role: 'student', // Default to student
+            is_master_teacher: false
+          })
+          .select()
+          .single();
+        
+        if (createError || !newUser) {
+          console.log(`❌ Error creating user record: ${createError?.message}`);
+          return c.json({ error: "Failed to create user record" }, 500);
+        }
+        
+        console.log('✅ New user record created:', newUser.id);
+        
+        return c.json({ 
+          success: true, 
+          accessToken: data.session.access_token,
+          user: {
+            id: newUser.id,
+            username: newUser.username,
+            name: username,
+            role: newUser.role,
+            isMasterTeacher: newUser.is_master_teacher || false
+          }
+        });
+      }
+      
+      // Found by username, update auth_id
+      console.log('✅ Found user by username, updating auth_id...');
+      const { data: updatedUser, error: updateError } = await supabaseAdmin
+        .from('users')
+        .update({ auth_id: data.user.id })
+        .eq('id', userByUsername.id)
+        .select()
+        .single();
+      
+      if (updateError) {
+        console.log(`⚠️ Could not update auth_id, but proceeding...`);
+      }
+      
+      return c.json({ 
+        success: true, 
+        accessToken: data.session.access_token,
+        user: {
+          id: userByUsername.id,
+          username: userByUsername.username,
+          name: username,
+          role: userByUsername.role,
+          isMasterTeacher: userByUsername.is_master_teacher || false
+        }
+      });
+    }
+
+    console.log('✅ User signed in successfully:', userData.username, 'ID:', userData.id);
+
+    return c.json({ 
+      success: true, 
+      accessToken: data.session.access_token,
+      user: {
+        id: userData.id,
+        username: userData.username,
+        name: username,
+        role: userData.role,
+        isMasterTeacher: userData.is_master_teacher || false
+      }
+    });
+  } catch (error) {
+    console.log(`❌ Error in signin endpoint: ${error.message}`);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get student progress (requires auth)
+app.get("/make-server-33549613/progress/:userId", async (c) => {
+  try {
+    console.log('📊 GET /progress/:userId called');
+    
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    console.log('🔑 Access token present:', !!accessToken);
+    
+    if (!accessToken) {
+      console.log('❌ No access token provided');
+      return c.json({ error: "No authorization token" }, 401);
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    if (!user || error) {
+      console.log('❌ Auth error:', error?.message);
+      return c.json({ error: "Unauthorized - " + (error?.message || "Invalid token") }, 401);
+    }
+
+    console.log('✅ User authenticated:', user.id);
+
+    const userId = c.req.param('userId');
+    console.log('📝 Fetching progress for userId:', userId);
+    
+    // Get progress from student_progress table
+    const { data: progress, error: progressError } = await supabase
+      .from('student_progress')
+      .select('*')
+      .eq('user_id', parseInt(userId))
+      .single();
+
+    console.log('📊 Progress query result:', { found: !!progress, error: progressError?.message });
+
+    // If progress doesn't exist, create default progress
+    if (progressError || !progress) {
+      console.log('⚠️ Progress not found, creating default...');
+      
+      // Get user data
+      const { data: userData, error: userDataError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', parseInt(userId))
+        .single();
+
+      if (!userData || userDataError) {
+        console.log('❌ User not found:', userDataError?.message);
+        return c.json({ error: "User not found - " + (userDataError?.message || "No user data") }, 404);
+      }
+
+      console.log('✅ User found:', userData.username);
+
+      const defaultProgress = {
+        user_id: parseInt(userId),
+        username: userData.username,
+        current_lesson_order: 1,
+        completed_lessons: [],
+        skill_mastery: {},
+        review_queue: [],
+        total_points: 0,
+        badges: [],
+        stats: {
+          totalQuizzesCompleted: 0,
+          averageAccuracy: 0,
+          currentStreak: 0,
+          bestStreak: 0,
+          lastActive: new Date().toISOString()
+        }
+      };
+
+      console.log('💾 Creating new progress record...');
+
+      // Create the progress record
+      const { data: newProgress, error: createError } = await supabase
+        .from('student_progress')
+        .insert(defaultProgress)
+        .select()
+        .single();
+
+      if (createError) {
+        console.log('❌ Error creating progress:', createError.message, createError);
+        return c.json({ error: "Failed to create progress - " + createError.message }, 500);
+      }
+
+      console.log('✅ Progress created successfully');
+
+      return c.json({ 
+        progress: {
+          userId: newProgress.user_id.toString(),
+          username: newProgress.username,
+          name: userData.username,
+          currentLessonOrder: newProgress.current_lesson_order,
+          completedLessons: newProgress.completed_lessons,
+          skillMastery: newProgress.skill_mastery,
+          reviewQueue: newProgress.review_queue,
+          totalPoints: newProgress.total_points,
+          badges: newProgress.badges,
+          stats: newProgress.stats
+        }
+      });
+    }
+
+    console.log('✅ Returning existing progress');
+
+    // Return existing progress
+    return c.json({ 
+      progress: {
+        userId: progress.user_id.toString(),
+        username: progress.username,
+        name: progress.username,
+        currentLessonOrder: progress.current_lesson_order,
+        completedLessons: progress.completed_lessons,
+        skillMastery: progress.skill_mastery,
+        reviewQueue: progress.review_queue,
+        totalPoints: progress.total_points,
+        badges: progress.badges,
+        stats: progress.stats
+      }
+    });
+  } catch (error) {
+    console.log(`❌ CRITICAL ERROR in /progress/:userId: ${error.message}`, error);
+    return c.json({ error: "Server error - " + error.message }, 500);
+  }
+});
+
+// Update student progress (requires auth)
+app.post("/make-server-33549613/progress/:userId", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    if (!user || error) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const userId = c.req.param('userId');
+    const updates = await c.req.json();
+
+    // Convert camelCase to snake_case for database
+    const dbUpdates: any = {};
+    if (updates.currentLessonOrder !== undefined) dbUpdates.current_lesson_order = updates.currentLessonOrder;
+    if (updates.completedLessons !== undefined) dbUpdates.completed_lessons = updates.completedLessons;
+    if (updates.skillMastery !== undefined) dbUpdates.skill_mastery = updates.skillMastery;
+    if (updates.reviewQueue !== undefined) dbUpdates.review_queue = updates.reviewQueue;
+    if (updates.totalPoints !== undefined) dbUpdates.total_points = updates.totalPoints;
+    if (updates.badges !== undefined) dbUpdates.badges = updates.badges;
+    if (updates.stats !== undefined) dbUpdates.stats = updates.stats;
+
+    // Update the progress
+    const { data: updatedProgress, error: updateError } = await supabase
+      .from('student_progress')
+      .update(dbUpdates)
+      .eq('user_id', parseInt(userId))
+      .select()
+      .single();
+
+    if (updateError) {
+      console.log('❌ Error updating progress:', updateError.message);
+      return c.json({ error: updateError.message }, 500);
+    }
+
+    return c.json({ 
+      success: true, 
+      progress: {
+        userId: updatedProgress.user_id.toString(),
+        username: updatedProgress.username,
+        name: updatedProgress.username,
+        currentLessonOrder: updatedProgress.current_lesson_order,
+        completedLessons: updatedProgress.completed_lessons,
+        skillMastery: updatedProgress.skill_mastery,
+        reviewQueue: updatedProgress.review_queue,
+        totalPoints: updatedProgress.total_points,
+        badges: updatedProgress.badges,
+        stats: updatedProgress.stats
+      }
+    });
+  } catch (error) {
+    console.log(`❌ Error updating progress: ${error.message}`);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get all students (for teacher dashboard, requires auth)
+app.get("/make-server-33549613/students", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    if (!user || error) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    // Get all students from student_progress table
+    const { data: studentsProgress, error: progressError } = await supabase
+      .from('student_progress')
+      .select('*');
+
+    if (progressError) {
+      console.log('❌ Error fetching students:', progressError.message);
+      return c.json({ error: progressError.message }, 500);
+    }
+
+    // Transform to expected format
+    const students = (studentsProgress || []).map((progress: any) => ({
+      userId: progress.user_id.toString(),
+      username: progress.username,
+      name: progress.username,
+      currentLessonOrder: progress.current_lesson_order,
+      completedLessons: progress.completed_lessons,
+      skillMastery: progress.skill_mastery,
+      reviewQueue: progress.review_queue,
+      totalPoints: progress.total_points,
+      badges: progress.badges,
+      stats: progress.stats,
+      password: '' // Password not stored in new system
+    }));
+
+    return c.json({ students });
+  } catch (error) {
+    console.log(`❌ Error getting students: ${error.message}`);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Delete student (teacher only, requires auth)
+app.delete("/make-server-33549613/students/:userId", async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    if (!user || error) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const userId = c.req.param('userId');
+
+    // Get user's auth_id
+    const { data: userData } = await supabase
+      .from('users')
+      .select('auth_id')
+      .eq('id', parseInt(userId))
+      .single();
+
+    if (userData?.auth_id) {
+      // Delete from Supabase Auth
+      await supabase.auth.admin.deleteUser(userData.auth_id);
+    }
+
+    // Delete from student_progress table (will cascade delete user via foreign key)
+    await supabase
+      .from('student_progress')
+      .delete()
+      .eq('user_id', parseInt(userId));
+
+    // Delete from users table
+    await supabase
+      .from('users')
+      .delete()
+      .eq('id', parseInt(userId));
+
+    return c.json({ success: true, message: "Student deleted successfully" });
+  } catch (error) {
+    console.log(`❌ Error deleting student: ${error.message}`);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+Deno.serve(app.fetch);

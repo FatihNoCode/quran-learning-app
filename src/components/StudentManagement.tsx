@@ -8,6 +8,7 @@ interface StudentManagementProps {
   accessToken: string;
   language: 'tr' | 'nl';
   onUpdate: () => void;
+  isMasterTeacher?: boolean;
 }
 
 const translations = {
@@ -57,7 +58,7 @@ const translations = {
   }
 };
 
-export default function StudentManagement({ student, accessToken, language, onUpdate }: StudentManagementProps) {
+export default function StudentManagement({ student, accessToken, language, onUpdate, isMasterTeacher = false }: StudentManagementProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUnlockDialog, setShowUnlockDialog] = useState(false);
@@ -161,41 +162,49 @@ export default function StudentManagement({ student, accessToken, language, onUp
 
   return (
     <div className="flex items-center gap-2">
-      {/* View Password Button */}
-      <button
-        onClick={() => setShowPassword(!showPassword)}
-        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-600 transition-colors"
-        title={showPassword ? t.hidePassword : t.viewPassword}
-      >
-        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-      </button>
+      {/* View Password Button - Only for Master Teachers */}
+      {isMasterTeacher && (
+        <button
+          onClick={() => setShowPassword(!showPassword)}
+          className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-600 transition-colors"
+          title={showPassword ? t.hidePassword : t.viewPassword}
+        >
+          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      )}
 
-      {/* Unlock Level Button */}
-      <button
-        onClick={() => setShowUnlockDialog(true)}
-        className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 transition-colors"
-        title={t.unlockLevel}
-      >
-        <Unlock size={18} />
-      </button>
+      {/* Unlock Level Button - Only for Master Teachers */}
+      {isMasterTeacher && (
+        <button
+          onClick={() => setShowUnlockDialog(true)}
+          className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 transition-colors"
+          title={t.unlockLevel}
+        >
+          <Unlock size={18} />
+        </button>
+      )}
 
-      {/* Delete Button */}
-      <button
-        onClick={() => setShowDeleteDialog(true)}
-        className="p-2 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 transition-colors"
-        title={t.delete}
-      >
-        <Trash2 size={18} />
-      </button>
+      {/* Delete Button - Only for Master Teachers */}
+      {isMasterTeacher && (
+        <button
+          onClick={() => setShowDeleteDialog(true)}
+          className="p-2 rounded-lg bg-red-100 hover:bg-red-200 text-red-600 transition-colors"
+          title={t.delete}
+        >
+          <Trash2 size={18} />
+        </button>
+      )}
 
-      {/* Reset Progress Button */}
-      <button
-        onClick={() => setShowResetDialog(true)}
-        className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
-        title={t.resetProgress}
-      >
-        <RotateCcw size={18} />
-      </button>
+      {/* Reset Progress Button - Only for Master Teachers */}
+      {isMasterTeacher && (
+        <button
+          onClick={() => setShowResetDialog(true)}
+          className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+          title={t.resetProgress}
+        >
+          <RotateCcw size={18} />
+        </button>
+      )}
 
       {/* Password Display */}
       {showPassword && (

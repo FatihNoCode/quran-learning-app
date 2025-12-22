@@ -2,6 +2,7 @@
 
 /* Import Uthmani font for Quranic Arabic text */
 @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Scheherazade+New:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/earlyaccess/notonaskharabic.css');
 
 :root {
   --font-size: 13px; /* Reduced from 16px to make everything 20% smaller */
@@ -189,7 +190,7 @@ html {
 
 /* Uthmani font for Arabic/Quranic text */
 .arabic-text {
-  font-family: 'Amiri Quran', 'Scheherazade New', serif;
+  font-family: 'Amiri Quran', 'Scheherazade New', 'Noto Naskh Arabic', serif;
   direction: rtl;
   text-align: right;
   line-height: 2;

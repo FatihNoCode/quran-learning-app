@@ -1083,58 +1083,5 @@ app.delete("/make-server-33549613/content/quizzes/:quizId", async (c) => {
   }
 });
 
-// AI helper endpoint (keeps key on the server side)
-app.post("/make-server-33549613/ai/suggest", async (c) => {
-  try {
-    const user = await getAuthUser(c);
-    if (!user || !isTeacher(user)) {
-      return c.json({ error: "Only teachers can request AI help" }, 403);
-    }
-
-    const { topic, type } = await c.req.json();
-    const editor = getEditorLabel(user);
-
-    // We intentionally avoid sending any private key to the client.
-    const aiConfigured = Boolean(Deno.env.get("ALIF_AI_SERVICE_ACCOUNT_JSON"));
-
-    const canned = {
-      title: topic
-        ? `AI önerisi: ${topic}`
-        : "AI önerisi: Alif-Ba çalışması",
-      outline: [
-        "Hedef harfleri tanıt (görsel + sesli)",
-        "Eşleştirme / çoktan seçmeli kontrol",
-        "Evet/hayır hızlı değerlendirme",
-        "Kısa eşleştirme veya yazma alıştırması",
-      ],
-      quizIdeas: [
-        {
-          type: "multiple-choice",
-          prompt: "Bu harf hangisi?",
-          options: ["ب", "ت", "ث", "ن"],
-          answer: "ب",
-        },
-        {
-          type: "yes-no",
-          prompt: "‘ث’ harfi dişlerin önünde okunur.",
-          answer: "yes",
-        },
-      ],
-      note:
-        "Sunucu tarafında anahtar tutularak güvenli kullanıma hazır. Gerçek modele bağlanmak için ALIF_AI_SERVICE_ACCOUNT_JSON değişkenini ayarlayın.",
-    };
-
-    return c.json({
-      suggestion: canned,
-      configured: aiConfigured,
-      requestedBy: editor,
-      type: type || "lesson",
-    });
-  } catch (error) {
-    console.log(`Error from AI helper: ${error.message}`);
-    return c.json({ error: error.message }, 500);
-  }
-});
-
 Deno.serve(app.fetch);
 

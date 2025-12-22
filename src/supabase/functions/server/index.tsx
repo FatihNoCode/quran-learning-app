@@ -7,308 +7,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 // Teacher registration codes
 const TEACHER_REGISTRATION_CODE = "QURAN2024";
 const MASTER_TEACHER_CODE = "MASTER2024";
-const CONTENT_KEY = "content:lessons-quizzes";
 
 const app = new Hono();
-
-type LessonContentType =
-  | "image-lesson"
-  | "letter-grid"
-  | "letter-practice"
-  | "letter-positions"
-  | "letter-connected"
-  | "letter-haraka"
-  | "haraka-practice";
-
-type LessonActivityType =
-  | "yes-no"
-  | "multiple-choice"
-  | "matching"
-  | "open-ended";
-
-interface LessonItem {
-  arabic: string;
-  transliteration?: string;
-  explanation?: string;
-  audioUrl?: string;
-}
-
-interface LessonContent {
-  type: LessonContentType;
-  title: string;
-  titleNl?: string;
-  instruction: string;
-  instructionNl?: string;
-  letterGroups?: string[][];
-  items?: LessonItem[];
-  color?: string;
-  imagePath?: string;
-  audioUrl?: string;
-  learningModes?: LessonActivityType[];
-}
-
-interface LessonRecord {
-  id: string;
-  order: number;
-  level: string;
-  content: LessonContent;
-  lastEditedAt?: string;
-  lastEditedBy?: string;
-}
-
-interface QuizQuestion {
-  id: string;
-  prompt: string;
-  type: LessonActivityType;
-  options?: string[];
-  pairs?: { left: string; right: string }[];
-  answer?: string;
-  explanation?: string;
-}
-
-interface QuizRecord {
-  id: string;
-  title: string;
-  description?: string;
-  learningModes?: LessonActivityType[];
-  questions: QuizQuestion[];
-  lastEditedAt?: string;
-  lastEditedBy?: string;
-}
-
-interface ContentState {
-  lessons: LessonRecord[];
-  quizzes: QuizRecord[];
-  lastEditedAt?: string;
-  lastEditedBy?: string;
-}
-
-const seedLessons: LessonRecord[] = [
-  {
-    id: "lesson-1",
-    order: 1,
-    level: "Alif-Ba",
-    lastEditedAt: "2025-12-16T12:00:00.000Z",
-    lastEditedBy: "system",
-    content: {
-      type: "letter-grid",
-      title: "Alif ve Ba Temelleri",
-      titleNl: "Alif en Ba Basis",
-      instruction:
-        "Harfleri tanıyın, sesli okuyun ve çizgi defterinde tekrar edin.",
-      instructionNl:
-        "Herken de letters, lees ze hardop en oefen ze in je schrift.",
-      letterGroups: [
-        ["ا", "ب", "ت"],
-        ["ث", "ن", "م"],
-      ],
-      color: "#7C3AED",
-      learningModes: ["multiple-choice", "yes-no"],
-    },
-  },
-  {
-    id: "lesson-2",
-    order: 2,
-    level: "Alif-Ba",
-    lastEditedAt: "2025-12-16T12:00:00.000Z",
-    lastEditedBy: "system",
-    content: {
-      type: "letter-practice",
-      title: "Harf Seslendirme",
-      titleNl: "Letter Uitspraak",
-      instruction:
-        "Her harfi dinleyin ve ardından tekrar edin. Sesleri heceleyin.",
-      instructionNl:
-        "Luister naar elke letter en herhaal. Spreek de klanken uit.",
-      color: "#2563EB",
-      items: [
-        { arabic: "ا", transliteration: "Alif", explanation: "Düz ses (Elif)" },
-        { arabic: "ب", transliteration: "Ba", explanation: "Dudak sesi" },
-        { arabic: "ت", transliteration: "Ta", explanation: "Dil ucu dişler" },
-        {
-          arabic: "ث",
-          transliteration: "Tha",
-          explanation: "Dil ucu dişlerin önüsü",
-        },
-      ],
-      learningModes: ["multiple-choice", "open-ended"],
-    },
-  },
-  {
-    id: "lesson-3",
-    order: 3,
-    level: "Alif-Ba",
-    lastEditedAt: "2025-12-16T12:00:00.000Z",
-    lastEditedBy: "system",
-    content: {
-      type: "letter-positions",
-      title: "Ba Harfi Bağlantıları",
-      titleNl: "Ba in Verbinding",
-      instruction: "Harfin başta, ortada ve sonda nasıl yazıldığını gör.",
-      instructionNl:
-        "Zie hoe de letter aan het begin, midden en eind wordt geschreven.",
-      color: "#059669",
-      items: [
-        { arabic: "بـ", explanation: "Ba başlangıç" },
-        { arabic: "ـبـ", explanation: "Ba orta" },
-        { arabic: "ـب", explanation: "Ba son" },
-      ],
-      learningModes: ["matching"],
-    },
-  },
-  {
-    id: "lesson-4",
-    order: 4,
-    level: "Harakat",
-    lastEditedAt: "2025-12-16T12:00:00.000Z",
-    lastEditedBy: "system",
-    content: {
-      type: "letter-haraka",
-      title: "Fetha ile Harfler",
-      titleNl: "Letters met Fatha",
-      instruction:
-        "Fetha işaretiyle harflerin sesini dinleyin ve tekrar edin.",
-      instructionNl: "Luister naar de klank met fatha en herhaal.",
-      color: "#D97706",
-      items: [
-        { arabic: "بَ", transliteration: "Ba", explanation: "Açık a sesi" },
-        { arabic: "تَ", transliteration: "Ta", explanation: "A sesi ile" },
-        {
-          arabic: "نَ",
-          transliteration: "Na",
-          explanation: "Burundan gelen a sesi",
-        },
-      ],
-      learningModes: ["yes-no", "multiple-choice"],
-    },
-  },
-  {
-    id: "lesson-5",
-    order: 5,
-    level: "Kelimeler",
-    lastEditedAt: "2025-12-16T12:00:00.000Z",
-    lastEditedBy: "system",
-    content: {
-      type: "letter-connected",
-      title: "Bağlantılı Harflerle Kelimeler",
-      titleNl: "Woorden met Verbonden Letters",
-      instruction:
-        "Harfleri birleştirerek basit kelimeler oku ve anlamlandır.",
-      instructionNl:
-        "Lees eenvoudige woorden met verbonden letters en begrijp de betekenis.",
-      color: "#EC4899",
-      items: [
-        { arabic: "بَاب", transliteration: "baab", explanation: "Kapı" },
-        { arabic: "بِنْت", transliteration: "bint", explanation: "Kız" },
-        { arabic: "ثَوْب", transliteration: "thawb", explanation: "Elbise" },
-      ],
-      learningModes: ["open-ended", "matching"],
-    },
-  },
-];
-
-const seedQuizzes: QuizRecord[] = [
-  {
-    id: "quiz-1",
-    title: "Alif-Ba Hızlı Kontrol",
-    description: "Harf tanıma ve temel sesler",
-    learningModes: ["multiple-choice", "yes-no"],
-    lastEditedAt: "2025-12-16T12:00:00.000Z",
-    lastEditedBy: "system",
-    questions: [
-      {
-        id: "q1",
-        prompt: "Bu harf hangisi?",
-        type: "multiple-choice",
-        options: ["ب", "ت", "ث", "ن"],
-        answer: "ب",
-        explanation: "Alt noktası olan dudak sesi.",
-      },
-      {
-        id: "q2",
-        prompt: "‘ث’ harfi dilin ucu dişlerin önüne değerek okunur.",
-        type: "yes-no",
-        answer: "yes",
-        explanation: "Doğru, İngilizcedeki “th” gibi.",
-      },
-      {
-        id: "q3",
-        prompt: "Eşleştirme",
-        type: "matching",
-        pairs: [
-          { left: "ا", right: "alif" },
-          { left: "ب", right: "ba" },
-          { left: "ت", right: "ta" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "quiz-2",
-    title: "Harakat Mini Test",
-    description: "Fetha ile hızlı tekrar",
-    learningModes: ["yes-no", "open-ended"],
-    lastEditedAt: "2025-12-16T12:00:00.000Z",
-    lastEditedBy: "system",
-    questions: [
-      {
-        id: "q4",
-        prompt: "بَ sesi hangi hareke ile gelir?",
-        type: "multiple-choice",
-        options: ["Fetha", "Kesra", "Damme", "Sukun"],
-        answer: "Fetha",
-      },
-      {
-        id: "q5",
-        prompt: "ثَوْب kelimesinin anlamını yaz.",
-        type: "open-ended",
-        explanation: "Beklenen cevap: elbise",
-      },
-    ],
-  },
-];
-
-const getAuthUser = async (c: any) => {
-  const accessToken = c.req.header("Authorization")?.split(" ")[1];
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
-
-  const { data: { user }, error } = await supabase.auth.getUser(accessToken);
-  if (error || !user) {
-    return null;
-  }
-  return user;
-};
-
-const ensureContentState = async (): Promise<ContentState> => {
-  const existing = await kv.get(CONTENT_KEY);
-  if (existing?.lessons?.length) {
-    return existing;
-  }
-
-  const seeded: ContentState = {
-    lessons: seedLessons,
-    quizzes: seedQuizzes,
-    lastEditedAt: seedLessons[0].lastEditedAt,
-    lastEditedBy: "system",
-  };
-  await kv.set(CONTENT_KEY, seeded);
-  return seeded;
-};
-
-const getEditorLabel = (user: any) =>
-  user?.user_metadata?.username ||
-  user?.user_metadata?.name ||
-  user?.email ||
-  "teacher";
-
-const isMasterTeacher = (user: any) =>
-  Boolean(user?.user_metadata?.isMasterTeacher);
-
-const isTeacher = (user: any) =>
-  user?.user_metadata?.role === "teacher" || user?.app_metadata?.role === "teacher";
 
 // Enable logger
 app.use('*', logger(console.log));
@@ -355,71 +55,86 @@ app.post("/make-server-33549613/signup", async (c) => {
       }
     }
 
-    // Check if username already exists
-    const existingUser = await kv.get(`user:${username}`);
-    if (existingUser) {
-      return c.json({ error: "Username already exists" }, 400);
-    }
-
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
+    // Check if username already exists in our users table (case-insensitive)
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('username')
+      .eq('username', username.toLowerCase())
+      .single();
+    
+    if (existingUser) {
+      return c.json({ error: "Username already exists" }, 400);
+    }
+
     // Create auth user with email (using username@arabic-learning.app as email)
-    const { data, error } = await supabase.auth.admin.createUser({
-      email: `${username}@arabic-learning.app`,
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: `${username.toLowerCase()}@arabic-learning.app`,
       password: password,
-      user_metadata: { name, role: actualRole, username, isMasterTeacher },
-      // Automatically confirm the user's email since an email server hasn't been configured.
+      user_metadata: { username: username.toLowerCase(), name, role: actualRole, isMasterTeacher },
       email_confirm: true
     });
 
-    if (error) {
-      console.log(`Error creating user in signup: ${error.message}`);
-      return c.json({ error: error.message }, 400);
+    if (authError) {
+      console.log(`Error creating user in signup: ${authError.message}`);
+      return c.json({ error: authError.message }, 400);
     }
 
-    // Store user data in KV store (including password for teacher recovery)
-    const userId = data.user.id;
-    await kv.set(`user:${username}`, {
-      id: userId,
-      username,
-      name,
-      role: actualRole,
-      isMasterTeacher,
-      password: password, // Store password for recovery
-      createdAt: new Date().toISOString()
-    });
+    const authId = authData.user.id;
 
-    // If student, add to students list and initialize progress
+    // Insert user into users table
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .insert({
+        auth_id: authId,
+        username: username.toLowerCase(),
+        role: actualRole,
+        is_master_teacher: isMasterTeacher
+      })
+      .select()
+      .single();
+
+    if (userError) {
+      console.log(`Error creating user record: ${userError.message}`);
+      // Clean up auth user if database insert fails
+      await supabase.auth.admin.deleteUser(authId);
+      return c.json({ error: userError.message }, 400);
+    }
+
+    // If student, initialize progress
     if (role === 'student') {
-      const students = await kv.get('students') || [];
-      students.push(userId);
-      await kv.set('students', students);
+      const { error: progressError } = await supabase
+        .from('student_progress')
+        .insert({
+          user_id: userData.id,
+          username: username.toLowerCase(),
+          current_lesson_order: 1,
+          completed_lessons: [],
+          skill_mastery: {},
+          review_queue: [],
+          total_points: 0,
+          badges: [],
+          stats: {
+            totalQuizzesCompleted: 0,
+            averageAccuracy: 0,
+            currentStreak: 0,
+            bestStreak: 0,
+            lastActive: new Date().toISOString()
+          }
+        });
 
-      // Initialize student progress
-      await kv.set(`progress:${userId}`, {
-        userId,
-        username,
-        name,
-        currentLevel: 'letters',
-        currentLessonIndex: 0,
-        currentLessonOrder: 1, // For new sequential lesson system
-        completedLessons: [],
-        reviewItems: [],
-        lastActive: new Date().toISOString()
-      });
-    } else {
-      // If teacher, add to teachers list
-      const teachers = await kv.get('teachers') || [];
-      teachers.push(userId);
-      await kv.set('teachers', teachers);
+      if (progressError) {
+        console.log(`Error creating student progress: ${progressError.message}`);
+      }
     }
 
     // Sign in the user and get access token
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: `${username}@arabic-learning.app`,
+      email: `${username.toLowerCase()}@arabic-learning.app`,
       password: password,
     });
 
@@ -437,11 +152,11 @@ app.post("/make-server-33549613/signup", async (c) => {
       success: true, 
       accessToken: signInData.session.access_token,
       user: {
-        id: userId,
-        username,
-        name,
-        role: actualRole,
-        isMasterTeacher
+        id: userData.id,
+        username: userData.username,
+        name: userData.name,
+        role: userData.role,
+        isMasterTeacher: userData.is_master_teacher || false
       }
     });
   } catch (error) {
@@ -465,7 +180,7 @@ app.post("/make-server-33549613/signin", async (c) => {
     );
 
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: `${username}@arabic-learning.app`,
+      email: `${username.toLowerCase()}@arabic-learning.app`,
       password: password,
     });
 
@@ -474,10 +189,20 @@ app.post("/make-server-33549613/signin", async (c) => {
       return c.json({ error: "Invalid username or password" }, 401);
     }
 
-    // Get user data from KV store
-    const userData = await kv.get(`user:${username}`);
+    // Get user data from users table using service role key
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
     
-    if (!userData) {
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('username', username.toLowerCase())
+      .single();
+    
+    if (userError || !userData) {
+      console.log(`Error fetching user data: ${userError?.message}`);
       return c.json({ error: "User data not found" }, 404);
     }
 
@@ -487,9 +212,9 @@ app.post("/make-server-33549613/signin", async (c) => {
       user: {
         id: userData.id,
         username: userData.username,
-        name: userData.name,
+        name: userData.username, // Use username as name for now
         role: userData.role,
-        isMasterTeacher: userData.isMasterTeacher || false
+        isMasterTeacher: userData.is_master_teacher || false
       }
     });
   } catch (error) {
@@ -513,10 +238,36 @@ app.get("/make-server-33549613/progress/:userId", async (c) => {
     }
 
     const userId = c.req.param('userId');
-    const progress = await kv.get(`progress:${userId}`);
+    let progress = await kv.get(`progress:${userId}`);
 
+    // If progress doesn't exist, create default progress
     if (!progress) {
-      return c.json({ error: "Progress not found" }, 404);
+      const userData = await kv.get(`user:${userId}`);
+      if (!userData) {
+        return c.json({ error: "User not found" }, 404);
+      }
+
+      progress = {
+        userId,
+        username: userData.username,
+        name: userData.name,
+        currentLessonOrder: 1,
+        completedLessons: [],
+        skillMastery: {},
+        reviewQueue: [],
+        totalPoints: 0,
+        badges: [],
+        stats: {
+          totalQuizzesCompleted: 0,
+          averageAccuracy: 0,
+          currentStreak: 0,
+          bestStreak: 0,
+          lastActive: new Date().toISOString()
+        }
+      };
+
+      // Save the default progress
+      await kv.set(`progress:${userId}`, progress);
     }
 
     return c.json({ progress });
@@ -721,8 +472,10 @@ app.post("/make-server-33549613/students/:userId/reset-progress", async (c) => {
       currentLessonIndex: 0,
       currentLessonOrder: 1, // Reset to lesson 1 in new system
       completedLessons: [],
-      reviewItems: [],
-      lastActive: new Date().toISOString()
+      reviewItems: [], // Clear weak points
+      lastActive: new Date().toISOString(),
+      resetCount: (currentProgress.resetCount || 0) + 1,
+      lastResetDate: new Date().toISOString()
     };
 
     await kv.set(`progress:${userId}`, resetProgress);
@@ -919,219 +672,125 @@ app.delete("/make-server-33549613/teachers/:userId", async (c) => {
   }
 });
 
-// Content endpoints
-app.get("/make-server-33549613/content", async (c) => {
+// Get detailed student progress for teachers (requires teacher auth)
+app.get("/make-server-33549613/student-detail/:studentId", async (c) => {
   try {
-    const user = await getAuthUser(c);
-    if (!user) {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    if (!user || error) {
       return c.json({ error: "Unauthorized" }, 401);
     }
 
-    const content = await ensureContentState();
-    return c.json(content);
+    // Check if user is a teacher
+    const teacherData = await kv.get(`user:${user.user_metadata.username}`);
+    if (!teacherData || teacherData.role !== 'teacher') {
+      return c.json({ error: "Only teachers can access student details" }, 403);
+    }
+
+    const studentId = c.req.param('studentId');
+    const progress = await kv.get(`progress:${studentId}`);
+    
+    if (!progress) {
+      return c.json({ error: "Student progress not found" }, 404);
+    }
+
+    return c.json({ progress });
   } catch (error) {
-    console.log(`Error fetching content: ${error.message}`);
+    console.log(`Error fetching student detail: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
 });
 
-app.post("/make-server-33549613/content/lessons", async (c) => {
+// Get class-level analytics (requires teacher auth)
+app.get("/make-server-33549613/class-analytics", async (c) => {
   try {
-    const user = await getAuthUser(c);
-    if (!user || !isMasterTeacher(user)) {
-      return c.json({ error: "Only master teachers can edit lessons" }, 403);
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    if (!user || error) {
+      return c.json({ error: "Unauthorized" }, 401);
     }
 
-    const incoming = await c.req.json();
-    if (!incoming?.content?.title) {
-      return c.json({ error: "Lesson content is required" }, 400);
-    }
-    const content = await ensureContentState();
-    const now = new Date().toISOString();
-    const lessonId = incoming.id || crypto.randomUUID();
-
-    const normalized: LessonRecord = {
-      id: lessonId,
-      order: Number(incoming.order) || 1,
-      level: incoming.level || "Alif-Ba",
-      content: incoming.content,
-      lastEditedAt: now,
-      lastEditedBy: getEditorLabel(user),
-    };
-
-    const existingIndex = content.lessons.findIndex((l) => l.id === lessonId);
-    let lessons = [...content.lessons];
-    if (existingIndex >= 0) {
-      lessons[existingIndex] = normalized;
-    } else {
-      lessons.push(normalized);
-    }
-    lessons = lessons.sort((a, b) => a.order - b.order);
-
-    const updatedState: ContentState = {
-      ...content,
-      lessons,
-      lastEditedAt: now,
-      lastEditedBy: getEditorLabel(user),
-    };
-
-    await kv.set(CONTENT_KEY, updatedState);
-    return c.json({ lesson: normalized, lessons, lastEditedAt: now, lastEditedBy: getEditorLabel(user) });
-  } catch (error) {
-    console.log(`Error saving lesson: ${error.message}`);
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-app.delete("/make-server-33549613/content/lessons/:lessonId", async (c) => {
-  try {
-    const user = await getAuthUser(c);
-    if (!user || !isMasterTeacher(user)) {
-      return c.json({ error: "Only master teachers can delete lessons" }, 403);
+    // Check if user is a teacher
+    const teacherData = await kv.get(`user:${user.user_metadata.username}`);
+    if (!teacherData || teacherData.role !== 'teacher') {
+      return c.json({ error: "Only teachers can access class analytics" }, 403);
     }
 
-    const lessonId = c.req.param("lessonId");
-    const content = await ensureContentState();
-    const lessons = content.lessons.filter((l) => l.id !== lessonId);
+    // Get all students
+    const studentIds = await kv.get('students') || [];
+    const allProgress = await Promise.all(
+      studentIds.map((id: string) => kv.get(`progress:${id}`))
+    );
+    const validProgress = allProgress.filter(p => p !== null);
 
-    const updatedState: ContentState = {
-      ...content,
-      lessons,
-      lastEditedAt: new Date().toISOString(),
-      lastEditedBy: getEditorLabel(user),
-    };
+    // Calculate class-level statistics
+    const skillStats: Record<string, { attempts: number; correct: number; studentCount: number }> = {};
+    
+    validProgress.forEach((progress: any) => {
+      if (progress.skillMastery) {
+        Object.entries(progress.skillMastery).forEach(([skillId, mastery]: [string, any]) => {
+          if (!skillStats[skillId]) {
+            skillStats[skillId] = { attempts: 0, correct: 0, studentCount: 0 };
+          }
+          skillStats[skillId].attempts += mastery.attempts || 0;
+          skillStats[skillId].correct += mastery.correct || 0;
+          skillStats[skillId].studentCount += 1;
+        });
+      }
+    });
 
-    await kv.set(CONTENT_KEY, updatedState);
-    return c.json({ lessons, lastEditedAt: updatedState.lastEditedAt, lastEditedBy: updatedState.lastEditedBy });
-  } catch (error) {
-    console.log(`Error deleting lesson: ${error.message}`);
-    return c.json({ error: error.message }, 500);
-  }
-});
+    // Calculate difficulty (most-missed skills)
+    const skillDifficulty = Object.entries(skillStats).map(([skillId, stats]) => {
+      const accuracy = stats.attempts > 0 ? (stats.correct / stats.attempts) * 100 : 0;
+      return {
+        skillId,
+        attempts: stats.attempts,
+        accuracy: accuracy,
+        studentCount: stats.studentCount
+      };
+    }).sort((a, b) => a.accuracy - b.accuracy); // Sort by difficulty (lowest accuracy first)
 
-app.post("/make-server-33549613/content/quizzes", async (c) => {
-  try {
-    const user = await getAuthUser(c);
-    if (!user || !isMasterTeacher(user)) {
-      return c.json({ error: "Only master teachers can edit quizzes" }, 403);
-    }
+    // Get top performing students
+    const topStudents = validProgress
+      .map((p: any) => ({
+        userId: p.userId,
+        name: p.name,
+        totalPoints: p.totalPoints || 0,
+        accuracy: p.stats?.averageAccuracy || 0,
+        completedLessons: p.completedLessons?.length || 0
+      }))
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .slice(0, 10);
 
-    const incoming = await c.req.json();
-    if (!incoming?.title) {
-      return c.json({ error: "Quiz title is required" }, 400);
-    }
-    const content = await ensureContentState();
-    const now = new Date().toISOString();
-    const quizId = incoming.id || crypto.randomUUID();
-
-    const normalized: QuizRecord = {
-      id: quizId,
-      title: incoming.title,
-      description: incoming.description || "",
-      learningModes: incoming.learningModes || [],
-      questions: incoming.questions || [],
-      lastEditedAt: now,
-      lastEditedBy: getEditorLabel(user),
-    };
-
-    const existingIndex = content.quizzes.findIndex((q) => q.id === quizId);
-    const quizzes = [...content.quizzes];
-    if (existingIndex >= 0) {
-      quizzes[existingIndex] = normalized;
-    } else {
-      quizzes.push(normalized);
-    }
-
-    const updatedState: ContentState = {
-      ...content,
-      quizzes,
-      lastEditedAt: now,
-      lastEditedBy: getEditorLabel(user),
-    };
-
-    await kv.set(CONTENT_KEY, updatedState);
-    return c.json({ quiz: normalized, quizzes, lastEditedAt: now, lastEditedBy: getEditorLabel(user) });
-  } catch (error) {
-    console.log(`Error saving quiz: ${error.message}`);
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-app.delete("/make-server-33549613/content/quizzes/:quizId", async (c) => {
-  try {
-    const user = await getAuthUser(c);
-    if (!user || !isMasterTeacher(user)) {
-      return c.json({ error: "Only master teachers can delete quizzes" }, 403);
-    }
-
-    const quizId = c.req.param("quizId");
-    const content = await ensureContentState();
-    const quizzes = content.quizzes.filter((q) => q.id !== quizId);
-
-    const updatedState: ContentState = {
-      ...content,
-      quizzes,
-      lastEditedAt: new Date().toISOString(),
-      lastEditedBy: getEditorLabel(user),
-    };
-
-    await kv.set(CONTENT_KEY, updatedState);
-    return c.json({ quizzes, lastEditedAt: updatedState.lastEditedAt, lastEditedBy: updatedState.lastEditedBy });
-  } catch (error) {
-    console.log(`Error deleting quiz: ${error.message}`);
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-// AI helper endpoint (keeps key on the server side)
-app.post("/make-server-33549613/ai/suggest", async (c) => {
-  try {
-    const user = await getAuthUser(c);
-    if (!user || !isTeacher(user)) {
-      return c.json({ error: "Only teachers can request AI help" }, 403);
-    }
-
-    const { topic, type } = await c.req.json();
-    const editor = getEditorLabel(user);
-
-    // We intentionally avoid sending any private key to the client.
-    const aiConfigured = Boolean(Deno.env.get("ALIF_AI_SERVICE_ACCOUNT_JSON"));
-
-    const canned = {
-      title: topic
-        ? `AI önerisi: ${topic}`
-        : "AI önerisi: Alif-Ba çalışması",
-      outline: [
-        "Hedef harfleri tanıt (görsel + sesli)",
-        "Eşleştirme / çoktan seçmeli kontrol",
-        "Evet/hayır hızlı değerlendirme",
-        "Kısa eşleştirme veya yazma alıştırması",
-      ],
-      quizIdeas: [
-        {
-          type: "multiple-choice",
-          prompt: "Bu harf hangisi?",
-          options: ["ب", "ت", "ث", "ن"],
-          answer: "ب",
-        },
-        {
-          type: "yes-no",
-          prompt: "‘ث’ harfi dişlerin önünde okunur.",
-          answer: "yes",
-        },
-      ],
-      note:
-        "Sunucu tarafında anahtar tutularak güvenli kullanıma hazır. Gerçek modele bağlanmak için ALIF_AI_SERVICE_ACCOUNT_JSON değişkenini ayarlayın.",
-    };
+    // Calculate overall stats
+    const totalStudents = validProgress.length;
+    const averageAccuracy = totalStudents > 0
+      ? validProgress.reduce((sum: number, p: any) => sum + (p.stats?.averageAccuracy || 0), 0) / totalStudents
+      : 0;
+    const totalQuizzesCompleted = validProgress.reduce((sum: number, p: any) => sum + (p.stats?.totalQuizzesCompleted || 0), 0);
 
     return c.json({
-      suggestion: canned,
-      configured: aiConfigured,
-      requestedBy: editor,
-      type: type || "lesson",
+      analytics: {
+        totalStudents,
+        averageAccuracy,
+        totalQuizzesCompleted,
+        difficultSkills: skillDifficulty.slice(0, 10), // Top 10 most difficult skills
+        topStudents,
+        skillStats
+      }
     });
   } catch (error) {
-    console.log(`Error from AI helper: ${error.message}`);
+    console.log(`Error fetching class analytics: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
 });

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { projectId, publicAnonKey } from './utils/supabase/info';
 import Auth from './components/Auth';
 import NewStudentDashboard from './components/NewStudentDashboard';
 import TeacherDashboard from './components/TeacherDashboard';
 import WelcomeGuide from './components/WelcomeGuide';
-import { BookOpen, Users } from 'lucide-react';
+import { BookOpen, Users, Home } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
+import homeIcon from 'figma:asset/b064a1b5a53d37f1101ede8d5dc76112da50bd5a.png';
 import { Logo } from './components/Logo.svg';
 
 export interface User {
@@ -28,7 +30,7 @@ function App() {
   const [language, setLanguage] = useState<'tr' | 'nl'>('tr');
   const [loading, setLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
-  const [homeSignal, setHomeSignal] = useState(0);
+  const [studentView, setStudentView] = useState<'dashboard' | 'lesson' | 'practice' | 'profile'>('dashboard');
 
   useEffect(() => {
     // Check if user is already logged in (from localStorage)
@@ -138,7 +140,7 @@ function App() {
             <button
               onClick={() => {
                 if (user.role === 'student') {
-                  setHomeSignal((prev) => prev + 1);
+                  setStudentView('dashboard');
                 }
               }}
               className="flex items-center justify-center bg-white rounded-xl shadow-md hover:shadow-lg transition-all transform hover:scale-105 border-2 border-purple-200 p-2 px-[2px] py-[2px]"
@@ -189,7 +191,7 @@ function App() {
         {user.role === 'student' ? (
           <NewStudentDashboard 
             context={appContext} 
-            homeSignal={homeSignal}
+            onViewChange={(view) => setStudentView(view)}
           />
         ) : (
           <TeacherDashboard context={appContext} />

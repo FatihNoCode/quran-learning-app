@@ -326,12 +326,12 @@ app.use(
 );
 
 // Health check endpoint
-app.get("/make-server-33549613/health", (c) => {
+app.get("/health", (c) => {
   return c.json({ status: "ok" });
 });
 
 // Sign up endpoint - creates a new user
-app.post("/make-server-33549613/signup", async (c) => {
+app.post("/signup", async (c) => {
   try {
     const { username, password, name, role, teacherCode } = await c.req.json();
     
@@ -451,7 +451,7 @@ app.post("/make-server-33549613/signup", async (c) => {
 });
 
 // Sign in endpoint
-app.post("/make-server-33549613/signin", async (c) => {
+app.post("/signin", async (c) => {
   try {
     const { username, password } = await c.req.json();
 
@@ -499,7 +499,7 @@ app.post("/make-server-33549613/signin", async (c) => {
 });
 
 // Get student progress (requires auth)
-app.get("/make-server-33549613/progress/:userId", async (c) => {
+app.get("/progress/:userId", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -527,7 +527,7 @@ app.get("/make-server-33549613/progress/:userId", async (c) => {
 });
 
 // Update student progress (requires auth)
-app.post("/make-server-33549613/progress/:userId", async (c) => {
+app.post("/progress/:userId", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -563,7 +563,7 @@ app.post("/make-server-33549613/progress/:userId", async (c) => {
 });
 
 // Get all students (for teacher dashboard, requires auth)
-app.get("/make-server-33549613/students", async (c) => {
+app.get("/students", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -601,7 +601,7 @@ app.get("/make-server-33549613/students", async (c) => {
 });
 
 // Delete student (teacher only, requires auth)
-app.delete("/make-server-33549613/students/:userId", async (c) => {
+app.delete("/students/:userId", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -647,7 +647,7 @@ app.delete("/make-server-33549613/students/:userId", async (c) => {
 });
 
 // Unlock level for student (teacher only, requires auth)
-app.post("/make-server-33549613/students/:userId/unlock-level", async (c) => {
+app.post("/students/:userId/unlock-level", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -691,7 +691,7 @@ app.post("/make-server-33549613/students/:userId/unlock-level", async (c) => {
 });
 
 // Reset student progress (teacher only, requires auth)
-app.post("/make-server-33549613/students/:userId/reset-progress", async (c) => {
+app.post("/students/:userId/reset-progress", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -735,7 +735,7 @@ app.post("/make-server-33549613/students/:userId/reset-progress", async (c) => {
 });
 
 // Reset student progress to specific lesson (student self-service)
-app.post("/make-server-33549613/students/:userId/reset-to-lesson", async (c) => {
+app.post("/students/:userId/reset-to-lesson", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -791,7 +791,7 @@ app.post("/make-server-33549613/students/:userId/reset-to-lesson", async (c) => 
 });
 
 // Get student password (teacher only, requires auth)
-app.get("/make-server-33549613/students/:userId/password", async (c) => {
+app.get("/students/:userId/password", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -826,7 +826,7 @@ app.get("/make-server-33549613/students/:userId/password", async (c) => {
 });
 
 // Get all teachers (master teacher only, requires auth)
-app.get("/make-server-33549613/teachers", async (c) => {
+app.get("/teachers", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -863,7 +863,7 @@ app.get("/make-server-33549613/teachers", async (c) => {
 });
 
 // Delete teacher (master teacher only, requires auth)
-app.delete("/make-server-33549613/teachers/:userId", async (c) => {
+app.delete("/teachers/:userId", async (c) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -920,7 +920,7 @@ app.delete("/make-server-33549613/teachers/:userId", async (c) => {
 });
 
 // Content endpoints
-app.get("/make-server-33549613/content", async (c) => {
+app.get("/content", async (c) => {
   try {
     const user = await getAuthUser(c);
     if (!user) {
@@ -935,7 +935,7 @@ app.get("/make-server-33549613/content", async (c) => {
   }
 });
 
-app.post("/make-server-33549613/content/lessons", async (c) => {
+app.post("/content/lessons", async (c) => {
   try {
     const user = await getAuthUser(c);
     if (!user || !isMasterTeacher(user)) {
@@ -983,7 +983,7 @@ app.post("/make-server-33549613/content/lessons", async (c) => {
   }
 });
 
-app.delete("/make-server-33549613/content/lessons/:lessonId", async (c) => {
+app.delete("/content/lessons/:lessonId", async (c) => {
   try {
     const user = await getAuthUser(c);
     if (!user || !isMasterTeacher(user)) {
@@ -1009,7 +1009,7 @@ app.delete("/make-server-33549613/content/lessons/:lessonId", async (c) => {
   }
 });
 
-app.post("/make-server-33549613/content/quizzes", async (c) => {
+app.post("/content/quizzes", async (c) => {
   try {
     const user = await getAuthUser(c);
     if (!user || !isMasterTeacher(user)) {
@@ -1057,7 +1057,7 @@ app.post("/make-server-33549613/content/quizzes", async (c) => {
   }
 });
 
-app.delete("/make-server-33549613/content/quizzes/:quizId", async (c) => {
+app.delete("/content/quizzes/:quizId", async (c) => {
   try {
     const user = await getAuthUser(c);
     if (!user || !isMasterTeacher(user)) {
@@ -1079,59 +1079,6 @@ app.delete("/make-server-33549613/content/quizzes/:quizId", async (c) => {
     return c.json({ quizzes, lastEditedAt: updatedState.lastEditedAt, lastEditedBy: updatedState.lastEditedBy });
   } catch (error) {
     console.log(`Error deleting quiz: ${error.message}`);
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-// AI helper endpoint (keeps key on the server side)
-app.post("/make-server-33549613/ai/suggest", async (c) => {
-  try {
-    const user = await getAuthUser(c);
-    if (!user || !isTeacher(user)) {
-      return c.json({ error: "Only teachers can request AI help" }, 403);
-    }
-
-    const { topic, type } = await c.req.json();
-    const editor = getEditorLabel(user);
-
-    // We intentionally avoid sending any private key to the client.
-    const aiConfigured = Boolean(Deno.env.get("ALIF_AI_SERVICE_ACCOUNT_JSON"));
-
-    const canned = {
-      title: topic
-        ? `AI önerisi: ${topic}`
-        : "AI önerisi: Alif-Ba çalışması",
-      outline: [
-        "Hedef harfleri tanıt (görsel + sesli)",
-        "Eşleştirme / çoktan seçmeli kontrol",
-        "Evet/hayır hızlı değerlendirme",
-        "Kısa eşleştirme veya yazma alıştırması",
-      ],
-      quizIdeas: [
-        {
-          type: "multiple-choice",
-          prompt: "Bu harf hangisi?",
-          options: ["ب", "ت", "ث", "ن"],
-          answer: "ب",
-        },
-        {
-          type: "yes-no",
-          prompt: "‘ث’ harfi dişlerin önünde okunur.",
-          answer: "yes",
-        },
-      ],
-      note:
-        "Sunucu tarafında anahtar tutularak güvenli kullanıma hazır. Gerçek modele bağlanmak için ALIF_AI_SERVICE_ACCOUNT_JSON değişkenini ayarlayın.",
-    };
-
-    return c.json({
-      suggestion: canned,
-      configured: aiConfigured,
-      requestedBy: editor,
-      type: type || "lesson",
-    });
-  } catch (error) {
-    console.log(`Error from AI helper: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
 });
