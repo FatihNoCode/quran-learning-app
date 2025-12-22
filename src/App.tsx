@@ -30,7 +30,7 @@ function App() {
   const [language, setLanguage] = useState<'tr' | 'nl'>('tr');
   const [loading, setLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
-  const [studentView, setStudentView] = useState<'dashboard' | 'lesson' | 'practice' | 'profile'>('dashboard');
+  const [studentView, setStudentView] = useState<'dashboard' | 'lesson' | 'practice' | 'profile' | 'trivia'>('dashboard');
 
   useEffect(() => {
     // Check if user is already logged in (from localStorage)

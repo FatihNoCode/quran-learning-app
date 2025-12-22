@@ -290,6 +290,7 @@ export default function Auth({ onLogin, language, onLanguageChange }: AuthProps)
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 transition-colors"
                 required
+                placeholder={language === "tr" ? "kullaniciadi" : "gebruikersnaam"}
               />
               {!isLogin && (
                 <div className="mt-2 flex items-start gap-2 text-sm text-purple-600 bg-purple-50 p-3 rounded-lg border border-purple-200">

@@ -3,20 +3,21 @@ import { AppContextType } from '../App';
 import { lessons as notionLessons, getLessonByOrder } from '../data/notionLessons';
 import { placeholderLessons } from '../data/placeholderLessons';
 import { LessonActivity } from './LessonActivity';
+import IslamicTrivia from './IslamicTrivia';
 import { PracticeWeakAreas } from './PracticeWeakAreas';
 import { StudentProfile } from './StudentProfile';
 import { Leaderboard } from './Leaderboard';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
-import { BookOpen, Brain, User, Star, Award, TrendingUp, Flame, Home } from 'lucide-react';
+import { BookOpen, Brain, User, Star, Award, TrendingUp, Flame, Sparkles } from 'lucide-react';
 import { StudentProgress, Badge, getDueReviewItems, updateStreak } from '../utils/masterySystem';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { toast } from 'sonner@2.0.3';
 import homeIcon from 'figma:asset/b064a1b5a53d37f1101ede8d5dc76112da50bd5a.png';
 import NewLessonViewer from './NewLessonViewer';
 
-type ActivityView = 'dashboard' | 'lesson' | 'practice' | 'profile';
+type ActivityView = 'dashboard' | 'lesson' | 'practice' | 'profile' | 'trivia';
 
 interface NewStudentDashboardProps {
   context: AppContextType;
@@ -259,6 +260,23 @@ export default function NewStudentDashboard({ context, onViewChange }: NewStuden
     );
   }
 
+  // Show trivia
+  if (currentView === 'trivia') {
+    return (
+      <div className="space-y-4">
+        <div className="max-w-6xl mx-auto">
+          <button
+            onClick={() => setCurrentView('dashboard')}
+            className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700"
+          >
+            {language === 'tr' ? 'Geri Dön' : 'Terug'}
+          </button>
+        </div>
+        <IslamicTrivia language={language} />
+      </div>
+    );
+  }
+
   // Dashboard view
   // Get the current lesson - check if it's lesson 1 from notionLessons
   let currentLessonTitle = '';
@@ -343,7 +361,7 @@ export default function NewStudentDashboard({ context, onViewChange }: NewStuden
       </Card>
 
       {/* Action Buttons */}
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-4 gap-4">
         {completedLessons < totalLessons && (
           <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('lesson')}>
             <div className="flex flex-col items-center text-center gap-3">
@@ -369,6 +387,18 @@ export default function NewStudentDashboard({ context, onViewChange }: NewStuden
                 ? `${dueReviewItems.length} soru hazır` 
                 : `${dueReviewItems.length} vragen klaar`
               }
+            </p>
+          </div>
+        </Card>
+
+        <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('trivia')}>
+          <div className="flex flex-col items-center text-center gap-3">
+            <Sparkles className="text-purple-600" size={48} />
+            <h3 className="text-xl">
+              {language === 'tr' ? 'Bilgi Yarışması' : 'Trivia'}
+            </h3>
+            <p className="text-sm text-gray-600">
+              {language === 'tr' ? 'Bilgini test et' : 'Test je kennis'}
             </p>
           </div>
         </Card>
