@@ -73,7 +73,7 @@
 
 @layer theme {
   :root, :host {
-    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic", serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     --color-red-50: oklch(.971 .013 17.38);
     --color-red-100: oklch(.936 .032 17.717);
@@ -2570,6 +2570,10 @@ html {
   direction: rtl;
   font-family: Amiri Quran, Scheherazade New, Noto Naskh Arabic, serif;
   line-height: 2;
+}
+
+:where(.text-arabic, [lang|="ar"], [lang^="ar"], :lang(ar)) {
+  font-family: "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic", serif !important;
 }
 
 @property --tw-translate-x {

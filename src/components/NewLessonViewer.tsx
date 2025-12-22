@@ -13,49 +13,49 @@ interface NewLessonViewerProps {
 
 const translations = {
   tr: {
-    continue: 'Devam Et',
+    continue: 'Devam et',
     previous: 'Geri',
     next: 'İleri',
-    complete: 'Dersi Tamamla',
-    lessonComplete: 'Ders Tamamlandı!',
+    complete: 'Dersi tamamla',
+    lessonComplete: 'Ders tamamlandı!',
     back: 'Geri',
     item: 'Öğe',
     of: '/',
-    showParts: 'Parçaları Göster',
-    hideParts: 'Parçaları Gizle',
+    showParts: 'Parçaları göster',
+    hideParts: 'Parçaları gizle',
     soundItOut: 'Seslendir',
-    isolated: 'Tek Başına',
+    isolated: 'Tek başına',
     inWord: 'Kelimede',
-    startQuiz: 'Sınava Başla',
+    startQuiz: 'Sınava başla',
     quiz: 'Sınav',
     questionOf: '/',
-    finishQuestions: 'Soruları Bitir',
-    goToQuestions: 'Sorulara Git',
-    backToLesson: 'Derse Geri Dön',
+    finishQuestions: 'Soruları bitir',
+    goToQuestions: 'Sorulara git',
+    backToLesson: 'Derse geri dön',
     letter: 'Harf',
     pronunciation: 'Telaffuz',
-    wordStartsWith: 'Harfle Başlayan Kelime'
+    wordStartsWith: 'Harfle başlayan kelime'
   },
   nl: {
     continue: 'Doorgaan',
     previous: 'Vorige',
     next: 'Volgende',
-    complete: 'Les Voltooien',
-    lessonComplete: 'Les Voltooid!',
+    complete: 'Les voltooien',
+    lessonComplete: 'Les voltooid!',
     back: 'Terug',
     item: 'Item',
     of: 'van',
-    showParts: 'Toon Delen',
-    hideParts: 'Verberg Delen',
-    soundItOut: 'Klink het uit',
-    isolated: 'Alleenstaand',
-    inWord: 'In Woord',
-    startQuiz: 'Start Quiz',
+    showParts: 'Onderdelen tonen',
+    hideParts: 'Onderdelen verbergen',
+    soundItOut: 'Uitspreken',
+    isolated: 'Losstaand',
+    inWord: 'In woord',
+    startQuiz: 'Quiz starten',
     quiz: 'Quiz',
     questionOf: 'van',
-    finishQuestions: 'Vragen Afronden',
-    goToQuestions: 'Ga naar Vragen',
-    backToLesson: 'Terug naar Les',
+    finishQuestions: 'Vragen afronden',
+    goToQuestions: 'Ga naar vragen',
+    backToLesson: 'Terug naar les',
     letter: 'Letter',
     pronunciation: 'Uitspraak',
     wordStartsWith: 'Woord begint met de letter'
@@ -75,6 +75,9 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
   const [showContentWarning, setShowContentWarning] = useState(false);
 
   const t = translations[language];
+  const localizedTitle = lesson.content.titleTranslations
+    ? lesson.content.titleTranslations[language] ?? lesson.content.title
+    : lesson.content.title;
   
   // Filter valid quizzes (remove order-sequence and empty quizzes)
   const validQuizzes = useMemo(() => {
@@ -195,7 +198,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                   <button
                     onClick={handlePrevious}
                     disabled={currentQuizIndex === 0}
-                    className="flex-1 py-3 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="flex-1 py-3 rounded-xl bg-purple-500 text-white hover:bg-purple-600 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <ArrowLeft className="w-4 h-4" />
                     {t.previous}
@@ -204,7 +207,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                   <button
                     onClick={handleNext}
                     disabled={currentQuizIndex === totalQuizzes - 1}
-                    className="flex-1 py-3 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="flex-1 py-3 rounded-xl bg-purple-500 text-white hover:bg-purple-600 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {t.next}
                     <ArrowRight className="w-4 h-4" />
@@ -247,7 +250,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                 <CheckCircle className="w-12 h-12 text-white" />
               </div>
               <h1 className="text-purple-800 mb-3">{t.lessonComplete}</h1>
-              <p className="text-gray-600 mb-3">{lesson.content.title}</p>
+              <p className="text-gray-600 mb-3">{localizedTitle}</p>
               
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 mb-6">
                 <div className="text-4xl mb-2">{percentage}%</div>
@@ -268,7 +271,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                   onClick={() => onComplete()}
                   className="px-10 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 flex items-center gap-3 shadow-lg"
                 >
-                  {language === 'tr' ? 'Ana Sayfaya Dön' : 'Terug naar Dashboard'}
+                  {language === 'tr' ? 'Ana sayfaya dön' : 'Terug naar dashboard'}
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
@@ -278,11 +281,11 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
       );
     }
 
-    // Study phase - Show one letter at a time
-    const totalLetters = lesson.content.alphabetLetters?.length || 0;
-    const currentLetter = lesson.content.alphabetLetters?.[currentLetterIndex];
-    const isFirstLetter = currentLetterIndex === 0;
-    const isLastLetter = currentLetterIndex === totalLetters - 1;
+  // Study phase - Show one letter at a time
+  const totalLetters = lesson.content.alphabetLetters?.length || 0;
+  const currentLetter = lesson.content.alphabetLetters?.[currentLetterIndex];
+  const isFirstLetter = currentLetterIndex === 0;
+  const isLastLetter = currentLetterIndex === totalLetters - 1;
 
     if (!currentLetter) return null;
 
@@ -293,6 +296,15 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
       'normal': '#10B981' // Green
     };
     const bgColor = currentLetter.type ? letterTypeColors[currentLetter.type] : letterTypeColors['normal'];
+    const letterTypeLabels: {[key: string]: { tr: string; nl: string }} = {
+      peltek: { tr: 'Peltek', nl: 'Peltek' },
+      heavy: { tr: 'Kalın', nl: 'Zwaar' },
+      throat: { tr: 'Boğaz', nl: 'Keel' },
+    };
+    const currentTypeLabel =
+      currentLetter.type && currentLetter.type !== 'normal'
+        ? (language === 'tr' ? letterTypeLabels[currentLetter.type]?.tr : letterTypeLabels[currentLetter.type]?.nl)
+        : null;
 
     const handleLetterPrevious = () => {
       if (currentLetterIndex > 0) {
@@ -344,7 +356,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                     <BookOpen className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-gray-800 text-lg">{lesson.content.title}</h2>
+                    <h2 className="text-gray-800 text-lg">{localizedTitle}</h2>
                     <p className="text-gray-600 text-sm">
                       {currentLetterIndex + 1} {t.of} {totalLetters}
                     </p>
@@ -363,31 +375,28 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
             </div>
           </div>
 
+
           {/* Compact Letter Card Display */}
           <div className="bg-white rounded-2xl shadow-xl p-4 mb-3 border-4" style={{ borderColor: bgColor }}>
-            {/* Letter Type Badge */}
-            {currentLetter.type && currentLetter.type !== 'normal' && (
-              <div className="mb-3 text-center">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs text-gray-500">{t.letter}</p>
+                <p className="text-lg font-semibold text-gray-900">{currentLetter.name}</p>
+              </div>
+              {currentTypeLabel && (
                 <span 
-                  className="text-xs px-3 py-1 rounded-full text-white"
+                  className="inline-flex items-center px-3 py-1 rounded-full text-white text-xs shadow-sm"
                   style={{ backgroundColor: bgColor }}
                 >
-                  {currentLetter.type === 'peltek' 
-                    ? (language === 'tr' ? 'Peltek' : 'Peltek')
-                    : currentLetter.type === 'heavy'
-                    ? (language === 'tr' ? 'Kalın' : 'Zwaar')
-                    : currentLetter.type === 'throat'
-                    ? (language === 'tr' ? 'Boğaz' : 'Keel')
-                    : ''}
+                  {currentTypeLabel}
                 </span>
-              </div>
-            )}
-            
+              )}
+            </div>
+
             {/* Letter and Pronunciation - Side by Side */}
             <div className="grid grid-cols-2 gap-4 mb-3">
               {/* Letter Section */}
               <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border-2" style={{ borderColor: bgColor + '40' }}>
-                <p className="text-gray-600 text-xs mb-2">{t.letter}:</p>
                 <div 
                   className="flex items-center justify-center arabic-text"
                   style={{ 
@@ -399,7 +408,6 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                 >
                   {currentLetter.arabic}
                 </div>
-                <p className="text-gray-800 text-center mt-2">{currentLetter.name}</p>
               </div>
 
               {/* Pronunciation Section */}
@@ -421,7 +429,6 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                 </div>
               </div>
             </div>
-
             {/* Example Word - Full Width */}
             {currentLetter.example && currentLetter.example[language] !== '-' && (
               <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-3 border-2 border-green-200 mb-3">
@@ -456,7 +463,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                 <button
                   onClick={handleLetterPrevious}
                   disabled={isFirstLetter}
-                  className="flex-1 py-3 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl bg-purple-500 text-white hover:bg-purple-600 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   {t.previous}
@@ -465,7 +472,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                 <button
                   onClick={handleLetterNext}
                   disabled={isLastLetter}
-                  className="flex-1 py-3 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl bg-purple-500 text-white hover:bg-purple-600 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {t.next}
                   <ArrowRight className="w-4 h-4" />
@@ -505,7 +512,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                 <CheckCircle className="w-12 h-12 text-white" />
               </div>
               <h1 className="text-purple-800 mb-3">{t.lessonComplete}</h1>
-              <p className="text-gray-600 mb-3">{lesson.content.title}</p>
+              <p className="text-gray-600 mb-3">{localizedTitle}</p>
               <p className="text-green-600 mb-6">
                 {language === 'tr' ? '🎉 Harika iş! Sonraki derse geçiyorsun...' : '🎉 Geweldig werk! Naar de volgende les...'}
               </p>
@@ -515,7 +522,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                   onClick={() => onComplete()}
                   className="px-10 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 flex items-center gap-3 shadow-lg"
                 >
-                  {language === 'tr' ? 'Sonraki Derse Geç' : 'Ga naar Volgende Les'}
+                  {language === 'tr' ? 'Sonraki derse geç' : 'Ga naar volgende les'}
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
@@ -543,7 +550,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-gray-800">{lesson.content.title}</h2>
+                  <h2 className="text-gray-800">{localizedTitle}</h2>
                   <p className="text-gray-600 text-sm">{lesson.content.instruction}</p>
                 </div>
               </div>
@@ -619,7 +626,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
               <CheckCircle className="w-16 h-16 text-white" />
             </div>
             <h1 className="text-purple-800 mb-4">{t.lessonComplete}</h1>
-            <p className="text-gray-600 mb-4 text-xl">{lesson.content.title}</p>
+            <p className="text-gray-600 mb-4 text-xl">{localizedTitle}</p>
             <p className="text-green-600 mb-8">
               {language === 'tr' ? '🎉 Harika iş! Sonraki derse geçiyorsun...' : '🎉 Geweldig werk! Naar de volgende les...'}
             </p>
@@ -629,7 +636,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                 onClick={handleComplete}
                 className="px-12 py-5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 flex items-center gap-3 shadow-lg text-xl"
               >
-                {language === 'tr' ? 'Sonraki Derse Geç' : 'Ga naar Volgende Les'}
+                {language === 'tr' ? 'Sonraki derse geç' : 'Ga naar volgende les'}
                 <ArrowRight className="w-6 h-6" />
               </button>
             </div>
@@ -658,7 +665,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-gray-800">{lesson.content.title}</h2>
+                <h2 className="text-gray-800">{localizedTitle}</h2>
                 <p className="text-gray-600 text-sm">{lesson.content.instruction}</p>
               </div>
             </div>

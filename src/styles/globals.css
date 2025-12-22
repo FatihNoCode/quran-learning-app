@@ -195,3 +195,7 @@ html {
   text-align: right;
   line-height: 2;
 }
+
+:where(.text-arabic, [lang|="ar"], [lang^="ar"], :lang(ar)) {
+  font-family: 'Amiri Quran', 'Scheherazade New', 'Noto Naskh Arabic', serif !important;
+}

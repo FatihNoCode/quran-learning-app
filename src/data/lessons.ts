@@ -1,29 +1,9 @@
-// Lesson level definitions
+// Lesson level definitions (only the available lesson for now)
 export const LESSON_LEVELS = {
   letters: {
-    tr: 'Harfler',
-    nl: 'Letters'
+    tr: 'Ders 1',
+    nl: 'Les 1',
   },
-  harakaat: {
-    tr: 'Harekeler',
-    nl: 'Harakaat'
-  },
-  sukun_shadda: {
-    tr: 'Sükun ve Şedde',
-    nl: 'Sukun en Shadda'
-  },
-  madd: {
-    tr: 'Med Kuralları',
-    nl: 'Madd Regels'
-  },
-  tanween: {
-    tr: 'Tenvin',
-    nl: 'Tanween'
-  },
-  advanced: {
-    tr: 'İleri Seviye',
-    nl: 'Gevorderd'
-  }
 };
 
 // Export for backward compatibility

@@ -142,7 +142,7 @@ export function LessonActivity({ lesson, language, progress, onComplete }: Lesso
               size="lg"
               className="bg-purple-500 hover:bg-purple-600 text-xl px-8 py-6"
             >
-              {language === 'tr' ? 'Alıştırmalara Başla' : 'Start met Oefeningen'}
+              {language === 'tr' ? 'Alıştırmalara başla' : 'Start met oefeningen'}
               <ArrowRight className="ml-2" size={24} />
             </Button>
           </div>
@@ -152,7 +152,7 @@ export function LessonActivity({ lesson, language, progress, onComplete }: Lesso
         <Card className="p-6">
           <h3 className="text-xl mb-4 flex items-center gap-2">
             <Brain className="text-purple-500" size={24} />
-            {language === 'tr' ? 'Bu Derste Öğrenecekleriniz' : 'Wat je gaat leren'}
+            {language === 'tr' ? 'Bu derste öğrenecekleriniz' : 'Wat je gaat leren'}
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
             {lesson.skills.map((skill, index) => (
@@ -258,7 +258,7 @@ export function LessonActivity({ lesson, language, progress, onComplete }: Lesso
             <div className="p-4 bg-white rounded-xl text-center">
               <div className="text-3xl mb-2">{correctAnswers}/{totalQuizzes}</div>
               <div className="text-sm text-gray-600">
-                {language === 'tr' ? 'Doğru Cevaplar' : 'Juiste Antwoorden'}
+                {language === 'tr' ? 'Doğru cevaplar' : 'Juiste antwoorden'}
               </div>
             </div>
             <div className="p-4 bg-white rounded-xl text-center">
@@ -266,7 +266,7 @@ export function LessonActivity({ lesson, language, progress, onComplete }: Lesso
                 +{updatedProgress.totalPoints - progress.totalPoints}
               </div>
               <div className="text-sm text-gray-600">
-                {language === 'tr' ? 'Kazanılan Puan' : 'Verdiende Punten'}
+                {language === 'tr' ? 'Kazanılan puan' : 'Verdiende punten'}
               </div>
             </div>
           </div>
@@ -275,7 +275,7 @@ export function LessonActivity({ lesson, language, progress, onComplete }: Lesso
           {earnedBadges.length > 0 && (
             <div className="p-6 bg-yellow-50 rounded-xl mb-6 border-2 border-yellow-400">
               <h3 className="text-xl mb-4 text-center">
-                {language === 'tr' ? '🎉 Yeni Rozet Kazandın!' : '🎉 Nieuwe Badge Verdiend!'}
+                {language === 'tr' ? '🎉 Yeni rozet kazandın!' : '🎉 Nieuwe badge verdiend!'}
               </h3>
               <div className="grid md:grid-cols-2 gap-4">
                 {earnedBadges.map(badge => (
@@ -297,7 +297,7 @@ export function LessonActivity({ lesson, language, progress, onComplete }: Lesso
               size="lg"
               className="bg-green-500 hover:bg-green-600 text-xl px-8 py-6"
             >
-              {language === 'tr' ? 'Devam Et' : 'Ga Verder'}
+              {language === 'tr' ? 'Devam et' : 'Ga verder'}
               <ArrowRight className="ml-2" size={24} />
             </Button>
           </div>

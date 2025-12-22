@@ -103,7 +103,7 @@ export function StudentDetailView({ studentId, accessToken, language, onBack }: 
     try {
       setLoading(true);
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-33549613/student-detail/${studentId}`,
+        `https://${projectId}.supabase.co/functions/v1/make-server-33549613/progress/${studentId}`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`
@@ -111,11 +111,15 @@ export function StudentDetailView({ studentId, accessToken, language, onBack }: 
         }
       );
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type');
+      const payload = contentType?.includes('application/json')
+        ? await response.json()
+        : await response.text();
+
       if (response.ok) {
-        setProgress(data.progress);
+        setProgress((payload as any).progress);
       } else {
-        console.error('Error fetching student detail:', data.error);
+        console.error('Error fetching student detail:', (payload as any)?.error || payload);
       }
     } catch (error) {
       console.error('Error fetching student detail:', error);
