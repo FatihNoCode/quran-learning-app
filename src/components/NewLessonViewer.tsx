@@ -34,7 +34,11 @@ const translations = {
     backToLesson: 'Derse geri dön',
     letter: 'Harf',
     pronunciation: 'Telaffuz',
-    wordStartsWith: 'Harfle başlayan kelime'
+    wordStartsWith: 'Harfle başlayan kelime',
+    letterName: 'Harf ismi',
+    letterPronunciationLabel: 'Harf telaffuzu',
+    wordMeaning: 'Anlamı',
+    typeInfo: 'Harf tipi'
   },
   nl: {
     continue: 'Doorgaan',
@@ -58,7 +62,11 @@ const translations = {
     backToLesson: 'Terug naar les',
     letter: 'Letter',
     pronunciation: 'Uitspraak',
-    wordStartsWith: 'Woord begint met de letter'
+    wordStartsWith: 'Woord begint met de letter',
+    letterName: 'Letternaam',
+    letterPronunciationLabel: 'Letteruitspraak',
+    wordMeaning: 'Betekenis',
+    typeInfo: 'Lettertype'
   }
 };
 
@@ -290,21 +298,44 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
     if (!currentLetter) return null;
 
     const letterTypeColors: {[key: string]: string} = {
-      'peltek': '#EC4899', // Pink
-      'heavy': '#F59E0B', // Amber
-      'throat': '#8B5CF6', // Purple
+      'interdental': '#3B82F6', // Blue
+      'heavy': '#F97316', // Orange
+      'heavy-interdental': '#8B5CF6', // Purple
       'normal': '#10B981' // Green
     };
     const bgColor = currentLetter.type ? letterTypeColors[currentLetter.type] : letterTypeColors['normal'];
     const letterTypeLabels: {[key: string]: { tr: string; nl: string }} = {
-      peltek: { tr: 'Peltek', nl: 'Peltek' },
+      interdental: { tr: 'Peltek', nl: 'Interdentaal' },
       heavy: { tr: 'Kalın', nl: 'Zwaar' },
-      throat: { tr: 'Boğaz', nl: 'Keel' },
+      'heavy-interdental': { tr: 'Kalın + peltek', nl: 'Zwaar + interdentaal' },
+    };
+    const typeDescriptions: {[key: string]: { tr: string; nl: string }} = {
+      normal: {
+        tr: 'Nötr harf: dili rahat bırakın, standart ağız açıklığıyla okuyun.',
+        nl: 'Neutrale letter: tong ontspannen, normale mondstand.'
+      },
+      heavy: {
+        tr: 'Kalın harf: dili biraz geriye çekip kalınlaştırarak, güçlü bir tonla çıkarın.',
+        nl: 'Zware letter: tong iets naar achteren, brede en volle klank.'
+      },
+      interdental: {
+        tr: 'Peltek harf: dil ucunu ön dişler arasında hafifçe çıkararak yumuşak üfleyin.',
+        nl: 'Interdentale letter: tongpunt licht tussen de tanden, zacht uitblazen.'
+      },
+      'heavy-interdental': {
+        tr: 'Kalın + peltek: dil ucunu dişler arasında tutup sesi kalınlaştırın.',
+        nl: 'Zwaar + interdentaal: tongpunt tussen de tanden, met een diepe, zware klank.'
+      }
     };
     const currentTypeLabel =
       currentLetter.type && currentLetter.type !== 'normal'
         ? (language === 'tr' ? letterTypeLabels[currentLetter.type]?.tr : letterTypeLabels[currentLetter.type]?.nl)
         : null;
+    const typeText = currentLetter.type
+      ? (currentLetter.note
+          ? (language === 'tr' ? currentLetter.note.tr : currentLetter.note.nl)
+          : (language === 'tr' ? typeDescriptions[currentLetter.type]?.tr : typeDescriptions[currentLetter.type]?.nl))
+      : null;
 
     const handleLetterPrevious = () => {
       if (currentLetterIndex > 0) {
@@ -378,25 +409,16 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
 
           {/* Compact Letter Card Display */}
           <div className="bg-white rounded-2xl shadow-xl p-4 mb-3 border-4" style={{ borderColor: bgColor }}>
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-xs text-gray-500">{t.letter}</p>
-                <p className="text-lg font-semibold text-gray-900">{currentLetter.name}</p>
-              </div>
-              {currentTypeLabel && (
-                <span 
-                  className="inline-flex items-center px-3 py-1 rounded-full text-white text-xs shadow-sm"
+            <div className="grid md:grid-cols-3 gap-4 mb-3">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border-2 relative" style={{ borderColor: bgColor + '40' }}>
+                <button
+                  onClick={() => console.log('Play sound for letter:', currentLetter.arabic)}
+                  className="absolute top-2 right-2 p-2 rounded-full transition-all transform hover:scale-110 flex items-center justify-center text-white shadow-lg text-xs"
                   style={{ backgroundColor: bgColor }}
+                  aria-label="Play letter sound"
                 >
-                  {currentTypeLabel}
-                </span>
-              )}
-            </div>
-
-            {/* Letter and Pronunciation - Side by Side */}
-            <div className="grid grid-cols-2 gap-4 mb-3">
-              {/* Letter Section */}
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border-2" style={{ borderColor: bgColor + '40' }}>
+                  <Volume2 className="w-4 h-4" />
+                </button>
                 <div 
                   className="flex items-center justify-center arabic-text"
                   style={{ 
@@ -410,47 +432,52 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                 </div>
               </div>
 
-              {/* Pronunciation Section */}
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-200 relative">
-                {/* Sound Button - Top Right */}
-                <button
-                  onClick={() => console.log('Play sound for letter:', currentLetter.arabic)}
-                  className="absolute top-3 right-3 p-2 rounded-lg transition-all transform hover:scale-110 flex items-center gap-1 text-white shadow-lg text-xs"
-                  style={{ backgroundColor: bgColor }}
-                >
-                  <Volume2 className="w-4 h-4" />
-                </button>
-                
-                <p className="text-gray-600 text-xs mb-2">{t.pronunciation}:</p>
-                <div className="flex items-center justify-center" style={{ minHeight: '120px' }}>
-                  <p className="text-gray-800 text-3xl">
-                    {language === 'tr' ? currentLetter.pronunciation.tr : currentLetter.pronunciation.nl}
-                  </p>
-                </div>
-              </div>
-            </div>
-            {/* Example Word - Full Width */}
-            {currentLetter.example && currentLetter.example[language] !== '-' && (
-              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-3 border-2 border-green-200 mb-3">
-                <p className="text-gray-600 text-xs mb-1">{t.wordStartsWith}:</p>
-                <p className="text-gray-800 text-xl">
-                  {language === 'tr' ? currentLetter.example.tr : currentLetter.example.nl}
+                <p className="text-gray-600 text-xs mb-1">{t.letterName}</p>
+                <p className="text-xl font-semibold text-gray-900">{currentLetter.name}</p>
+                <p className="text-gray-600 text-xs mt-3 mb-1">{t.letterPronunciationLabel}</p>
+                <p className="text-gray-800 text-lg">
+                  {language === 'tr' ? currentLetter.pronunciation.tr : currentLetter.pronunciation.nl}
                 </p>
               </div>
-            )}
 
-            {/* Special Note - Full Width */}
-            {currentLetter.specialNote && (
+              {currentLetter.word && (
+                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border-2 border-green-200">
+                  <p className="text-gray-600 text-xs mb-1">{t.wordStartsWith}</p>
+                  <p className="text-xl font-semibold text-gray-900">
+                    {language === 'tr' ? currentLetter.word.pronunciation.tr : currentLetter.word.pronunciation.nl}
+                  </p>
+                  <p className="text-gray-600 text-xs mt-3 mb-1">{t.wordMeaning}</p>
+                  <p className="text-gray-800 text-sm">
+                    {language === 'tr' ? currentLetter.word.translation.tr : currentLetter.word.translation.nl}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {currentLetter.type && (
               <div 
-                className="rounded-xl p-3 border-2"
+                className="rounded-xl p-3 border-2 flex items-start gap-2"
                 style={{ 
                   backgroundColor: bgColor + '10',
                   borderColor: bgColor + '40'
                 }}
               >
-                <p className="text-gray-700 text-sm">
-                  💡 {language === 'tr' ? currentLetter.specialNote.tr : currentLetter.specialNote.nl}
-                </p>
+                <div className="w-16 h-12 rounded-lg flex items-center justify-center text-white text-xs font-semibold shadow px-2" style={{ backgroundColor: bgColor }}>
+                  {t.typeInfo}
+                </div>
+                <div className="flex-1">
+                  {currentTypeLabel && (
+                    <p className="text-sm font-semibold text-gray-900 mb-1">
+                      {currentTypeLabel}
+                    </p>
+                  )}
+                  {typeText && (
+                    <p className="text-gray-700 text-sm">
+                      {typeText}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </div>

@@ -7,6 +7,7 @@ export interface LessonContent {
   title: string; // Only Turkish as in original pages
   titleTranslations?: { tr: string; nl: string };
   instruction: string; // Only Turkish as in original pages
+  alphabetLetters?: AlphabetLetter[];
   letterGroups?: string[][]; // For grouped letter display
   items?: LessonItem[];
   letterIds?: string[]; // Reference to letter IDs in ARABIC_LETTERS
@@ -19,23 +20,18 @@ export interface LessonItem {
   explanation?: string;
 }
 
-// Legacy support - will be replaced by letter references
+export type AlphabetLetterType = 'normal' | 'heavy' | 'interdental' | 'heavy-interdental';
+
 export interface AlphabetLetter {
   arabic: string;
-  name: string;
-  pronunciation: {
-    tr: string;
-    nl: string;
+  name: string; // Letter name (e.g., Alif, Bā’)
+  pronunciation: { tr: string; nl: string }; // Letter pronunciation (favored/Classical)
+  word: {
+    pronunciation: { tr: string; nl: string }; // Word that starts with the letter
+    translation: { tr: string; nl: string }; // Meaning of the example word
   };
-  example?: {
-    tr: string;
-    nl: string;
-  };
-  type?: string;
-  specialNote?: {
-    tr: string;
-    nl: string;
-  };
+  type: AlphabetLetterType;
+  note?: { tr: string; nl: string }; // Optional extra note for the letter type
 }
 
 export interface Lesson {
@@ -98,223 +94,282 @@ const lesson1: Lesson = {
       {
         arabic: 'ا',
         name: 'Alif',
-        pronunciation: { tr: 'a / e', nl: 'a / e' },
-        example: { tr: 'Allah', nl: 'Allah' }
+        pronunciation: { tr: 'alif (ā)', nl: 'alif (ā)' },
+        word: {
+          pronunciation: { tr: 'Allah', nl: 'Allah' },
+          translation: { tr: 'Allah', nl: 'Allah / God' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'ب',
-        name: 'Bā',
-        pronunciation: { tr: 'be', nl: 'be' },
-        example: { tr: 'baba', nl: 'bal' }
+        name: 'Bā\'',
+        pronunciation: { tr: 'bā\' (b)', nl: 'bā\' (b)' },
+        word: {
+          pronunciation: { tr: 'bayt', nl: 'bayt' },
+          translation: { tr: 'ev', nl: 'huis' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'ت',
-        name: 'Tā',
-        pronunciation: { tr: 'te', nl: 'te' },
-        example: { tr: 'tesbih', nl: 'tas' }
+        name: 'Tā\'',
+        pronunciation: { tr: 'tā\' (t)', nl: 'tā\' (t)' },
+        word: {
+          pronunciation: { tr: 'tawbah', nl: 'tawbah' },
+          translation: { tr: 'tövbe', nl: 'berouw' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'ث',
-        name: 'Thā',
-        pronunciation: { tr: 'tha (peltek)', nl: 'tha (peltek)' },
-        example: { tr: '-', nl: '-' },
-        type: 'peltek',
-        specialNote: {
-          tr: 'Dilin ucunu üst ve alt dişler arasına hafifçe koyun ve hava üfleyin. İngilizce "think" kelimesindeki "th" gibi.',
-          nl: 'Plaats de punt van je tong licht tussen je boven- en ondertanden en blaas lucht. Zoals "th" in het Engelse "think".'
-        }
+        name: 'Thā\'',
+        pronunciation: { tr: 'thā\' (th)', nl: 'thā\' (th)' },
+        word: {
+          pronunciation: { tr: 'thalātha', nl: 'thalātha' },
+          translation: { tr: 'üç', nl: 'drie' }
+        },
+        type: 'interdental'
       },
       {
         arabic: 'ج',
-        name: 'Cīm',
-        pronunciation: { tr: 'cim', nl: 'cim' },
-        example: { tr: 'cami', nl: 'Jummuah' }
+        name: 'Jīm',
+        pronunciation: { tr: 'jīm (j)', nl: 'jīm (j)' },
+        word: {
+          pronunciation: { tr: 'jannah', nl: 'jannah' },
+          translation: { tr: 'cennet', nl: 'paradijs' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'ح',
-        name: 'Ḥā',
-        pronunciation: { tr: 'h (sert, boğaz)', nl: 'h (diep, keel)' },
-        example: { tr: '-', nl: '-' },
-        type: 'throat',
-        specialNote: {
-          tr: 'Boğazın derinliklerinden nefes verin, ağız veya dudakları kullanmadan. Güçlü, nefesli bir "h", ama daha derin.',
-          nl: 'Adem uit vanuit diep in de keel, zonder de mond of lippen te gebruiken. Een sterke, luchtige "h", maar dieper.'
-        }
+        name: 'Ḥā\'',
+        pronunciation: { tr: 'ḥā\' (ḥ)', nl: 'ḥā\' (ḥ)' },
+        word: {
+          pronunciation: { tr: 'hamd', nl: 'hamd' },
+          translation: { tr: 'hamd (övgü)', nl: 'lof / prijzing' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'خ',
-        name: 'Khā',
-        pronunciation: { tr: 'gha', nl: 'gha' },
-        example: { tr: '-', nl: 'goed' },
-        type: 'throat',
-        specialNote: {
-          tr: 'Boğazın arkasından hafif bir sürtünme sesiyle hava basın. Hollandaca "gracht" kelimesindeki "g" gibi.',
-          nl: 'Duw lucht vanuit de achterkant van de keel met een licht schrapend geluid. Zoals Nederlandse "g" in "gracht".'
-        }
+        name: 'Khā\'',
+        pronunciation: { tr: 'khā\' (kh)', nl: 'khā\' (kh)' },
+        word: {
+          pronunciation: { tr: 'khayr', nl: 'khayr' },
+          translation: { tr: 'hayır / iyilik', nl: 'goedheid' }
+        },
+        type: 'heavy'
       },
       {
         arabic: 'د',
         name: 'Dāl',
-        pronunciation: { tr: 'de', nl: 'de' },
-        example: { tr: 'dua', nl: 'doek' }
+        pronunciation: { tr: 'dāl (d)', nl: 'dāl (d)' },
+        word: {
+          pronunciation: { tr: 'dīn', nl: 'dīn' },
+          translation: { tr: 'din', nl: 'religie / geloof' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'ذ',
         name: 'Dhāl',
-        pronunciation: { tr: 'dza', nl: 'dza' },
-        example: { tr: '-', nl: '-' },
-        type: 'peltek',
-        specialNote: {
-          tr: 'Dilinizi üst dişlerinize değdirin ve yumuşak bir z sesi çıkarın. İngilizce "this" kelimesindeki "th" gibi.',
-          nl: 'Plaats je tong tegen je boventanden en maak een zachte z-klank. Zoals "th" in het Engelse "this".'
-        }
+        pronunciation: { tr: 'dhāl (dh)', nl: 'dhāl (dh)' },
+        word: {
+          pronunciation: { tr: 'dhikr', nl: 'dhikr' },
+          translation: { tr: 'zikir', nl: 'gedenken / gedachtenis' }
+        },
+        type: 'interdental'
       },
       {
         arabic: 'ر',
-        name: 'Rā',
-        pronunciation: { tr: 'r', nl: 'r' },
-        example: { tr: 'ramazan', nl: 'ramadan' }
+        name: 'Rā\'',
+        pronunciation: { tr: 'rā\' (r)', nl: 'rā\' (r)' },
+        word: {
+          pronunciation: { tr: 'raḥmah', nl: 'raḥmah' },
+          translation: { tr: 'rahmet', nl: 'barmhartigheid' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'ز',
-        name: 'Zāy',
-        pronunciation: { tr: 'z', nl: 'z' },
-        example: { tr: 'zekat', nl: 'zon' }
+        name: 'Ze',
+        pronunciation: { tr: 'ze (z)', nl: 'ze (z)' },
+        word: {
+          pronunciation: { tr: 'zakāh', nl: 'zakāh' },
+          translation: { tr: 'zekât', nl: 'aalmoes / zakat' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'س',
         name: 'Sīn',
-        pronunciation: { tr: 's', nl: 's' },
-        example: { tr: 'secde', nl: 'soera' }
+        pronunciation: { tr: 'sīn (s)', nl: 'sīn (s)' },
+        word: {
+          pronunciation: { tr: 'salām', nl: 'salām' },
+          translation: { tr: 'selam', nl: 'vrede' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'ش',
         name: 'Shīn',
-        pronunciation: { tr: 'ş', nl: 'sj' },
-        example: { tr: 'şükür', nl: 'sjaal' }
+        pronunciation: { tr: 'shīn (sh)', nl: 'shīn (sh)' },
+        word: {
+          pronunciation: { tr: 'shams', nl: 'shams' },
+          translation: { tr: 'güneş', nl: 'zon' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'ص',
         name: 'Ṣād',
-        pronunciation: { tr: 'sa (kalın)', nl: 'sa (zwaar)' },
-        example: { tr: 'sabır', nl: 'soera' },
+        pronunciation: { tr: 'ṣād (ṣ)', nl: 'ṣād (ṣ)' },
+        word: {
+          pronunciation: { tr: 'ṣalāh', nl: 'ṣalāh' },
+          translation: { tr: 'namaz', nl: 'gebed' }
+        },
         type: 'heavy'
       },
       {
         arabic: 'ض',
         name: 'Ḍād',
-        pronunciation: { tr: 'da (kalın)', nl: 'da (zwaar)' },
-        example: { tr: 'dua', nl: '-' },
+        pronunciation: { tr: 'ḍād (ḍ)', nl: 'ḍād (ḍ)' },
+        word: {
+          pronunciation: { tr: 'ḍuḥā', nl: 'ḍuḥā' },
+          translation: { tr: 'duha', nl: 'ochtendlicht / vroege morgen' }
+        },
         type: 'heavy'
       },
       {
         arabic: 'ط',
-        name: 'Ṭā',
-        pronunciation: { tr: 'ta (kalın)', nl: 'ta (zwaar)' },
-        example: { tr: 'tavaf', nl: '-' },
-        type: 'heavy',
-        specialNote: {
-          tr: 't harfini söyleyin ama dili düz ve ağır tutun. Kalın, güçlü bir "t" sesi.',
-          nl: 'Zeg t, maar houd de tong plat en zwaar. Een dikke, sterke t.'
-        }
+        name: 'Ṭā\'',
+        pronunciation: { tr: 'Ṭā\' (ṭ)', nl: 'Ṭā\' (ṭ)' },
+        word: {
+          pronunciation: { tr: 'ṭayyib', nl: 'ṭayyib' },
+          translation: { tr: 'temiz / iyi', nl: 'goed / puur' }
+        },
+        type: 'heavy'
       },
       {
         arabic: 'ظ',
-        name: 'Ẓā',
-        pronunciation: { tr: 'za (kalın, peltek)', nl: 'za (zwaar, peltek)' },
-        example: { tr: '-', nl: 'zon' },
-        type: 'heavy',
-        specialNote: {
-          tr: 'Dil üst dişlere + kalın z sesi. Ağır ذ versiyonu.',
-          nl: 'Tong tegen boventanden + zware z-klank. Zware versie van ذ.'
-        }
+        name: 'Ẓā\'',
+        pronunciation: { tr: 'ẓā\' (ẓ)', nl: 'ẓā\' (ẓ)' },
+        word: {
+          pronunciation: { tr: 'zann', nl: 'zann' },
+          translation: { tr: 'zan', nl: 'vermoeden / gedachte' }
+        },
+        type: 'heavy-interdental'
       },
       {
         arabic: 'ع',
         name: 'ʿAyn',
-        pronunciation: { tr: 'boğazdan "â"', nl: 'vanuit keel "â"' },
-        example: { tr: '-', nl: '-' },
-        type: 'throat',
-        specialNote: {
-          tr: 'Boğaz kaslarını sıkın ve içeriden kısa bir ses başlatın. Türkçe veya Hollandaca eşdeğeri yok.',
-          nl: 'Span de keelspieren en start een kort geluid van diep binnenin. Geen Turks of Nederlands equivalent.'
-        }
+        pronunciation: { tr: 'ʿayn (ʿa)', nl: 'ʿayn (ʿa)' },
+        word: {
+          pronunciation: { tr: 'ʿilm', nl: 'ʿilm' },
+          translation: { tr: 'ilim / bilgi', nl: 'kennis' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'غ',
         name: 'Ghayn',
-        pronunciation: { tr: 'ğ / g (boğaz)', nl: 'g (keel)' },
-        example: { tr: 'gayret', nl: '-' },
-        type: 'throat',
-        specialNote: {
-          tr: 'خ gibi ama sesli. Sesli Hollandaca "g".',
-          nl: 'Zoals خ, maar met stem toegevoegd. Een stemhebbende Nederlandse g.'
-        }
+        pronunciation: { tr: 'ghayn (gh)', nl: 'ghayn (gh)' },
+        word: {
+          pronunciation: { tr: 'ghafūr', nl: 'ghafūr' },
+          translation: { tr: 'çok bağışlayan', nl: 'zeer vergevend' }
+        },
+        type: 'heavy'
       },
       {
         arabic: 'ف',
-        name: 'Fā',
-        pronunciation: { tr: 'fe', nl: 'fe' },
-        example: { tr: 'fatiha', nl: 'fiets' }
+        name: 'Fā\'',
+        pronunciation: { tr: 'fā\' (f)', nl: 'fā\' (f)' },
+        word: {
+          pronunciation: { tr: 'fawz', nl: 'fawz' },
+          translation: { tr: 'başarı / kurtuluş', nl: 'succes / overwinning' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'ق',
         name: 'Qāf',
-        pronunciation: { tr: 'k (kalın)', nl: 'k (zwaar)' },
-        example: { tr: '-', nl: '-' },
-        type: 'throat',
-        specialNote: {
-          tr: 'k deyin ama dilin arkasından, boğazda derin. Ağır bir "k", normal Türkçe "k" değil.',
-          nl: 'Zeg k, maar vanuit de achterkant van de tong, diep in de keel. Een zware k, geen normale Turkse k.'
-        }
+        pronunciation: { tr: 'Qāf (q)', nl: 'Qāf (q)' },
+        word: {
+          pronunciation: { tr: 'Qur’ān', nl: 'Qur’ān' },
+          translation: { tr: 'Kur’an', nl: 'Koran' }
+        },
+        type: 'heavy'
       },
       {
         arabic: 'ك',
-        name: 'Kef',
-        pronunciation: { tr: 'k', nl: 'k' },
-        example: { tr: 'kitap', nl: 'kaart' }
+        name: 'Kāf',
+        pronunciation: { tr: 'kāf (k)', nl: 'kāf (k)' },
+        word: {
+          pronunciation: { tr: 'kitāb', nl: 'kitāb' },
+          translation: { tr: 'kitap', nl: 'boek' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'ل',
         name: 'Lām',
-        pronunciation: { tr: 'l', nl: 'l' },
-        example: { tr: 'lamba', nl: 'lamp' }
+        pronunciation: { tr: 'lām (l)', nl: 'lām (l)' },
+        word: {
+          pronunciation: { tr: 'layl', nl: 'layl' },
+          translation: { tr: 'gece', nl: 'nacht' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'م',
         name: 'Mīm',
-        pronunciation: { tr: 'm', nl: 'm' },
-        example: { tr: 'mescid', nl: 'maan' }
+        pronunciation: { tr: 'mīm (m)', nl: 'mīm (m)' },
+        word: {
+          pronunciation: { tr: 'Muḥammad', nl: 'Muḥammad' },
+          translation: { tr: 'Muhammed (SAV)', nl: 'Mohammed (VZMH)' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'ن',
         name: 'Nūn',
-        pronunciation: { tr: 'n', nl: 'n' },
-        example: { tr: 'namaz', nl: 'noer' }
+        pronunciation: { tr: 'nūn (n)', nl: 'nūn (n)' },
+        word: {
+          pronunciation: { tr: 'nās', nl: 'nās' },
+          translation: { tr: 'insanlar', nl: 'mensen' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'ه',
-        name: 'Hā',
-        pronunciation: { tr: 'he', nl: 'he' },
-        example: { tr: 'helal', nl: 'huis' }
+        name: 'Hā\'',
+        pronunciation: { tr: 'hā\' (h)', nl: 'hā\' (h)' },
+        word: {
+          pronunciation: { tr: 'hudā', nl: 'hudā' },
+          translation: { tr: 'hidayet', nl: 'leiding' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'و',
-        name: 'Vav',
-        pronunciation: { tr: 'wa / va', nl: 'wa / va' },
-        example: { tr: 'vakit', nl: 'water' }
+        name: 'Wāw',
+        pronunciation: { tr: 'wāw (w / ū)', nl: 'wāw (w / ū)' },
+        word: {
+          pronunciation: { tr: 'waḥy', nl: 'waḥy' },
+          translation: { tr: 'vahiy', nl: 'openbaring' }
+        },
+        type: 'normal'
       },
       {
         arabic: 'ي',
-        name: 'Yā',
-        pronunciation: { tr: 'ye', nl: 'ye' },
-        example: { tr: 'yasin', nl: 'jas' }
-      },
-      {
-        arabic: 'لا',
-        name: 'Lām–Alif',
-        pronunciation: { tr: 'La', nl: 'La' },
-        example: { tr: '-', nl: '-' }
+        name: 'Yā\'',
+        pronunciation: { tr: 'yā\' (y / ī)', nl: 'yā\' (y / ī)' },
+        word: {
+          pronunciation: { tr: 'yawm', nl: 'yawm' },
+          translation: { tr: 'gün', nl: 'dag' }
+        },
+        type: 'normal'
       }
     ],
     color: '#10B981' // Green
