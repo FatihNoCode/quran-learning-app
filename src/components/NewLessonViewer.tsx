@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Lesson } from '../data/notionLessons';
 import { CheckCircle, ArrowRight, ArrowLeft, Sparkles, BookOpen, Volume2 } from 'lucide-react';
 import { QuizComponent } from './QuizComponent';
@@ -81,6 +81,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
   const [currentLetterIndex, setCurrentLetterIndex] = useState(0);
   const [viewedLetters, setViewedLetters] = useState<Set<number>>(new Set([0])); // Track viewed letters, start with first
   const [showContentWarning, setShowContentWarning] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const t = translations[language];
   const localizedTitle = lesson.content.titleTranslations
@@ -353,6 +354,154 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
     };
 
     const allLettersViewed = viewedLetters.size === totalLetters;
+    const playLetterAudio = () => {
+      if (!currentLetter) return;
+
+      const normalizeName = (value: string) =>
+        value
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9 ()'-]+/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+      const letterAudioByArabic: Record<string, string> = {
+        'õ': 'alif',
+        'ù': 'ba',
+        '¦': 'ta (neutral)',
+        '®': 'tha',
+        'ª': 'jim',
+        'ð': 'ha early',
+        '©': 'kha',
+        'î': 'dal',
+        'ø': 'dhal',
+        'ñ': 'ra',
+        'ý': 'ze',
+        'ü': 'sin',
+        'ï': 'shin',
+        'æ': 'sad',
+        'ô': 'dad',
+        'ú': 'ta (heavy)',
+        '÷': 'za',
+        'û': 'ayn',
+        '§': 'ghayn',
+        'ë?': 'fa',
+        "ë'": 'qaf',
+        'ëŸ': 'kaf',
+        'ë"': 'lam',
+        'ë.': 'mim',
+        'ëÅ': 'nun',
+        'ëÎ': 'ha later',
+        'ë^': 'waw',
+        'ëS': 'ya'
+      };
+
+      const letterAudioByName: Record<string, string> = {
+        'alif': 'alif',
+        'ba': 'ba',
+        'ta': 'ta (neutral)',
+        'tha': 'tha',
+        'jim': 'jim',
+        'ha': 'ha later',
+        'ha neutral': 'ha later',
+        'ha later': 'ha later',
+        'ha earlier': 'ha early',
+        'ha early': 'ha early',
+        'ha neutral earlier in alphabet': 'ha early',
+        'ha neutral later in alphabet': 'ha later',
+        'kha': 'kha',
+        'dal': 'dal',
+        'dhal': 'dhal',
+        'ra': 'ra',
+        'ze': 'ze',
+        'zay': 'ze',
+        'sin': 'sin',
+        'seen': 'sin',
+        'shin': 'shin',
+        'sad': 'sad',
+        'dad': 'dad',
+        'ta heavy': 'ta (heavy)',
+        'ta neutral': 'ta (neutral)',
+        'za': 'za',
+        'ayn': 'ayn',
+        'ghayn': 'ghayn',
+        'fa': 'fa',
+        'qaf': 'qaf',
+        'kaf': 'kaf',
+        'lam': 'lam',
+        'mim': 'mim',
+        'nun': 'nun',
+        'waw': 'waw',
+        'waaw': 'waw',
+        'ya': 'ya',
+        'yaa': 'ya'
+      };
+
+      const letterAudioByIndex: string[] = [
+        'alif',
+        'ba',
+        'ta (neutral)',
+        'tha',
+        'jim',
+        'ha early',
+        'kha',
+        'dal',
+        'dhal',
+        'ra',
+        'ze',
+        'sin',
+        'shin',
+        'sad',
+        'dad',
+        'ta (heavy)',
+        'za',
+        'ayn',
+        'ghayn',
+        'fa',
+        'qaf',
+        'kaf',
+        'lam',
+        'mim',
+        'nun',
+        'ha later',
+        'waw',
+        'ya'
+      ];
+
+      const nameKey = normalizeName(currentLetter.name || '');
+      const fileName =
+        letterAudioByArabic[currentLetter.arabic] ||
+        letterAudioByName[nameKey] ||
+        letterAudioByIndex[currentLetterIndex];
+
+      if (!fileName) {
+        console.error('No audio mapping for letter', currentLetter);
+        return;
+      }
+
+      const candidatePaths = [`/audio/${encodeURIComponent(fileName)}.mp3`, `/Audio/${encodeURIComponent(fileName)}.mp3`];
+
+      const tryPlay = (index: number) => {
+        if (index >= candidatePaths.length) {
+          console.error('Failed to play letter audio for', currentLetter.name, 'tried', candidatePaths);
+          return;
+        }
+
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        }
+
+        const audio = new Audio(candidatePaths[index]);
+        audioRef.current = audio;
+        // Try next path only once on error; avoid duplicate retries from play().catch
+        audio.onerror = () => tryPlay(index + 1);
+        audio.play().catch(() => {});
+      };
+
+      tryPlay(0);
+    };
 
     const handleGoToQuestions = () => {
       if (!allLettersViewed) {
@@ -412,7 +561,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
             <div className="grid md:grid-cols-3 gap-4 mb-3">
               <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border-2 relative" style={{ borderColor: bgColor + '40' }}>
                 <button
-                  onClick={() => console.log('Play sound for letter:', currentLetter.arabic)}
+                  onClick={playLetterAudio}
                   className="absolute top-2 right-2 p-2 rounded-full transition-all transform hover:scale-110 flex items-center justify-center text-white shadow-lg text-xs"
                   style={{ backgroundColor: bgColor }}
                   aria-label="Play letter sound"
