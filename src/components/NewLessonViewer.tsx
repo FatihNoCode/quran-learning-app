@@ -1,8 +1,9 @@
-import { useState, useMemo, useRef } from 'react';
-import { Lesson } from '../data/notionLessons';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { Lesson, Quiz } from '../data/notionLessons';
 import { CheckCircle, ArrowRight, ArrowLeft, Sparkles, BookOpen, Volume2 } from 'lucide-react';
 import { QuizComponent } from './QuizComponent';
 import { filterValidQuizzes } from '../utils/quizFilters';
+import { Button } from './ui/button';
 
 interface NewLessonViewerProps {
   lesson: Lesson;
@@ -75,47 +76,151 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
   const [completed, setCompleted] = useState(false);
   const [showParts, setShowParts] = useState(false);
   const [phase, setPhase] = useState<'study' | 'quiz' | 'complete'>('study');
+  const [showIntro, setShowIntro] = useState(lesson.order === 1);
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
-  const [quizResults, setQuizResults] = useState<(boolean | null)[]>([]);
+  const [currentBundleIndex, setCurrentBundleIndex] = useState(0);
+  type AnswerRecord = { result: boolean | null; choice: number | null };
+  const [bundleResults, setBundleResults] = useState<Record<string, AnswerRecord[]>>({});
   const [showWarning, setShowWarning] = useState(false);
   const [currentLetterIndex, setCurrentLetterIndex] = useState(0);
   const [viewedLetters, setViewedLetters] = useState<Set<number>>(new Set([0])); // Track viewed letters, start with first
   const [showContentWarning, setShowContentWarning] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const playAudioClip = (clipId?: string) => {
+    if (!clipId) return;
+
+    const trimmed = clipId.trim();
+    const hasExtension = trimmed.includes('.') || trimmed.includes('/');
+    const candidates = hasExtension
+      ? [trimmed]
+      : [`/audio/${encodeURIComponent(trimmed)}.mp3`, `/Audio/${encodeURIComponent(trimmed)}.mp3`];
+
+    const tryPlay = (index: number) => {
+      if (index >= candidates.length) return;
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+
+      const audio = new Audio(candidates[index]);
+      audioRef.current = audio;
+      audio.onerror = () => tryPlay(index + 1);
+      audio.play().catch(() => tryPlay(index + 1));
+    };
+
+    tryPlay(0);
+  };
+
   const t = translations[language];
   const localizedTitle = lesson.content.titleTranslations
     ? lesson.content.titleTranslations[language] ?? lesson.content.title
     : lesson.content.title;
   
-  // Filter valid quizzes (remove order-sequence and empty quizzes)
-  const validQuizzes = useMemo(() => {
+  // Filter valid quizzes (remove order-sequence and empty quizzes) and group into bundles
+  const filteredQuizzes = useMemo(() => {
     return lesson.quizzes ? filterValidQuizzes(lesson.quizzes) : [];
   }, [lesson.quizzes]);
+
+  const lessonLabel = useMemo(
+    () => (language === 'tr' ? `Ders ${lesson.order}` : `Les ${lesson.order}`),
+    [language, lesson.order]
+  );
+
+  const quizBundles = useMemo(() => {
+    if (!filteredQuizzes.length) return [];
+
+    const grouped = new Map<string, { title?: string; quizzes: Quiz[] }>();
+    filteredQuizzes.forEach((quiz, idx) => {
+      const bundleId = quiz.bundleId || `bundle-${idx + 1}`;
+      if (!grouped.has(bundleId)) {
+        grouped.set(bundleId, { title: quiz.bundleTitle, quizzes: [] });
+      }
+      const entry = grouped.get(bundleId)!;
+      entry.quizzes.push(quiz);
+      if (!entry.title && quiz.bundleTitle) {
+        entry.title = quiz.bundleTitle;
+      }
+    });
+
+    return Array.from(grouped.entries()).map(([id, data], idx) => ({
+      id,
+      title: data.title || `${localizedTitle} - Part ${idx + 1}`,
+      quizzes: data.quizzes
+    }));
+  }, [filteredQuizzes, localizedTitle]);
+
+  // Prepare bundle results structure
+  useEffect(() => {
+    if (!quizBundles.length) return;
+
+    setBundleResults(prev => {
+      const next: Record<string, (boolean | null)[]> = {};
+      let changed = false;
+
+      quizBundles.forEach(bundle => {
+        const existing = prev[bundle.id] || [];
+        const updated = bundle.quizzes.map((_, idx) => existing[idx] ?? { result: null, choice: null });
+        next[bundle.id] = updated;
+        if (
+          updated.length !== existing.length ||
+          updated.some((value, idx) => value.result !== (existing[idx]?.result ?? null) || value.choice !== (existing[idx]?.choice ?? null))
+        ) {
+          changed = true;
+        }
+      });
+
+      if (Object.keys(prev).length !== Object.keys(next).length) {
+        changed = true;
+      }
+
+      return changed ? next : prev;
+    });
+  }, [quizBundles]);
   
   // Handle alphabet-detail type (new comprehensive alphabet lesson)
   if (lesson.content.type === 'alphabet-detail') {
+
     // Quiz phase
-    if (phase === 'quiz' && validQuizzes.length > 0) {
-      const currentQuiz = validQuizzes[currentQuizIndex];
-      const totalQuizzes = validQuizzes.length;
-      
-      // Initialize results array if empty
-      if (quizResults.length === 0) {
-        setQuizResults(new Array(totalQuizzes).fill(null));
-      }
-      
-      const handleQuizAnswer = (isCorrect: boolean) => {
-        // Update the result for current quiz
-        const newResults = [...quizResults];
-        newResults[currentQuizIndex] = isCorrect;
-        setQuizResults(newResults);
-        
-        // Auto-move to next quiz if not the last one
-        if (currentQuizIndex < totalQuizzes - 1) {
+    if (phase === 'quiz' && quizBundles.length > 0) {
+      const currentBundle = quizBundles[currentBundleIndex];
+      const totalBundles = quizBundles.length;
+      const currentQuiz = currentBundle.quizzes[currentQuizIndex];
+      const totalQuizzes = currentBundle.quizzes.length;
+      const currentBundleResults =
+        bundleResults[currentBundle.id]?.length === totalQuizzes
+          ? bundleResults[currentBundle.id]!
+          : Array.from({ length: totalQuizzes }, () => ({ result: null, choice: null }));
+      const currentRecord = currentBundleResults[currentQuizIndex] || { result: null, choice: null };
+      const isCurrentAnswered = currentRecord.result !== null || currentQuiz.scoringDisabled;
+
+      const handleQuizAnswer = (isCorrect: boolean, choice: number | null = null) => {
+        const wasAnswered = currentRecord.result !== null;
+        const bundleArray = [...currentBundleResults];
+        while (bundleArray.length < totalQuizzes) {
+          bundleArray.push({ result: null, choice: null });
+        }
+        bundleArray[currentQuizIndex] = { result: isCorrect, choice };
+        setBundleResults(prev => ({ ...prev, [currentBundle.id]: bundleArray }));
+
+        const allAnswered = bundleArray.every((record, idx) => record.result !== null || currentBundle.quizzes[idx]?.scoringDisabled);
+
+        if (isCorrect && !wasAnswered && currentQuizIndex < totalQuizzes - 1) {
           setTimeout(() => {
-            setCurrentQuizIndex(currentQuizIndex + 1);
-          }, 500);
+            setCurrentQuizIndex(idx => (idx === currentQuizIndex ? Math.min(idx + 1, totalQuizzes - 1) : idx));
+          }, 1000);
+        }
+
+        if (allAnswered) {
+          setTimeout(() => {
+            if (currentBundleIndex < totalBundles - 1) {
+              setCurrentBundleIndex(currentBundleIndex + 1);
+              setCurrentQuizIndex(0);
+            } else {
+              setPhase('complete');
+            }
+          }, 1500);
         }
       };
       
@@ -130,13 +235,34 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
           setCurrentQuizIndex(currentQuizIndex + 1);
         }
       };
+
+      const handleBundleChange = (index: number) => {
+        setCurrentBundleIndex(index);
+        setCurrentQuizIndex(0);
+      };
       
       const handleFinish = () => {
-        // Check if all questions are answered
-        const unanswered = quizResults.filter(r => r === null).length;
+        let bundleAnswers =
+          bundleResults[currentBundle.id]?.length === totalQuizzes
+            ? bundleResults[currentBundle.id]!
+            : Array.from({ length: totalQuizzes }, () => ({ result: null, choice: null }));
+
+        // Auto-mark non-scored questions as completed
+        let updatedAnswers = false;
+        bundleAnswers = bundleAnswers.map((record, idx) => {
+          if (record.result === null && currentBundle.quizzes[idx]?.scoringDisabled) {
+            updatedAnswers = true;
+            return { result: true, choice: record.choice };
+          }
+          return record;
+        });
+        if (updatedAnswers) {
+          setBundleResults(prev => ({ ...prev, [currentBundle.id]: bundleAnswers }));
+        }
+
+        const unanswered = bundleAnswers.filter(r => r.result === null).length;
         if (unanswered > 0) {
-          // Find first unanswered question and navigate to it
-          const firstUnansweredIndex = quizResults.findIndex(r => r === null);
+          const firstUnansweredIndex = bundleAnswers.findIndex(r => r.result === null);
           if (firstUnansweredIndex !== -1) {
             setCurrentQuizIndex(firstUnansweredIndex);
           }
@@ -145,39 +271,82 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
           return;
         }
         
+        // Move to next bundle or complete
+        if (currentBundleIndex < totalBundles - 1) {
+          setTimeout(() => {
+            setCurrentBundleIndex(currentBundleIndex + 1);
+            setCurrentQuizIndex(0);
+          }, 1500);
+          return;
+        }
+        
         // All questions answered, move to complete phase
-        setPhase('complete');
+        setTimeout(() => setPhase('complete'), 1500);
       };
       
-      const answeredCount = quizResults.filter(r => r !== null).length;
+      const answeredCount = currentBundleResults.filter((r, idx) => r.result !== null || currentBundle.quizzes[idx]?.scoringDisabled).length;
+      const totalAnsweredAcrossBundles = Object.entries(bundleResults).reduce((acc, [bundleId, results]) => {
+        const bundle = quizBundles.find(b => b.id === bundleId);
+        if (!bundle) return acc;
+        bundle.quizzes.forEach((quiz, idx) => {
+          const record = results[idx];
+          if (record?.result !== null || quiz.scoringDisabled) {
+            acc += 1;
+          }
+        });
+        return acc;
+      }, 0);
+      const totalQuizzesAcrossBundles = quizBundles.reduce((acc, bundle) => acc + bundle.quizzes.length, 0);
       
       return (
-        <div className="min-h-screen p-3" style={{ background: `linear-gradient(to bottom right, ${lesson.content.color}15, ${lesson.content.color}30)` }}>
+        <div className="min-h-screen p-3" style={{ backgroundColor: '#e6f4ff' }}>
           <div className="max-w-4xl mx-auto">
             <div className="mb-4">
               <div className="bg-white rounded-2xl shadow-lg p-4 border-4" style={{ borderColor: lesson.content.color }}>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: lesson.content.color }}>
                       <Sparkles className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-gray-800">{t.quiz}</h2>
+                      <h2 className="text-gray-800">{lessonLabel}</h2>
                       <p className="text-gray-600 text-sm">
                         {currentQuizIndex + 1} {t.questionOf} {totalQuizzes}
                       </p>
                     </div>
                   </div>
-                  <div className="flex-1 mx-4 bg-gray-200 rounded-full h-2 max-w-xs">
-                    <div
-                      className="h-2 rounded-full transition-all duration-300"
-                      style={{ 
-                        width: `${((currentQuizIndex + 1) / totalQuizzes) * 100}%`,
-                        backgroundColor: lesson.content.color
-                      }}
-                    />
+                  <div className="flex-1 min-w-[220px]">
+                    <div className="bg-gray-200 rounded-full h-3 shadow-inner overflow-hidden">
+                      <div
+                        className="h-3 rounded-full transition-all duration-300 shadow-sm"
+                        style={{ 
+                          width: `${((currentQuizIndex + 1) / totalQuizzes) * 100}%`,
+                          background: 'linear-gradient(90deg, #a855f7, #ec4899, #f59e0b)'
+                        }}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-700 mt-1 text-right font-medium">
+                      {lessonLabel}
+                    </div>
                   </div>
                 </div>
+                {quizBundles.length > 1 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {quizBundles.map((bundle, idx) => (
+                      <button
+                        key={bundle.id}
+                        onClick={() => handleBundleChange(idx)}
+                        className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                          idx === currentBundleIndex
+                            ? 'bg-purple-100 border-purple-400 text-purple-700'
+                            : 'bg-white border-gray-300 text-gray-700 hover:border-purple-400'
+                        }`}
+                      >
+                        {language === 'tr' ? `Bolum ${idx + 1}` : `Deel ${idx + 1}`}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -186,7 +355,9 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                 quiz={currentQuiz}
                 language={language}
                 onAnswer={handleQuizAnswer}
-                isAnswered={quizResults[currentQuizIndex] !== null}
+                isAnswered={isCurrentAnswered}
+                initialChoice={currentRecord.choice}
+                answerResult={currentRecord.result}
               />
             </div>
             
@@ -236,7 +407,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
               
               {showWarning && (
                 <div className="mt-2 text-red-500 text-sm text-center">
-                  {language === 'tr' ? 'Tüm soruları cevapladınız mı?' : 'Heeft u alle vragen beantwoord?'}
+                  {language === 'tr' ? 'T?m sorular? cevaplad?n?z m??' : 'Heeft u alle vragen beantwoord?'}
                 </div>
               )}
             </div>
@@ -244,15 +415,29 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
         </div>
       );
     }
+
     
     // Complete phase
     if (phase === 'complete') {
-      const correctAnswers = quizResults.filter(r => r).length;
-      const totalQuizzes = validQuizzes.length;
-      const percentage = totalQuizzes > 0 ? Math.round((correctAnswers / totalQuizzes) * 100) : 0;
+      const scoringTotals = quizBundles.reduce(
+        (acc, bundle) => {
+          const results = bundleResults[bundle.id] || [];
+          bundle.quizzes.forEach((quiz, idx) => {
+            if (quiz.scoringDisabled) return;
+            acc.total += 1;
+            const res = results[idx]?.result;
+            if (res) {
+              acc.correct += 1;
+            }
+          });
+          return acc;
+        },
+        { correct: 0, total: 0 }
+      );
+      const percentage = scoringTotals.total > 0 ? Math.round((scoringTotals.correct / scoringTotals.total) * 100) : 0;
       
       return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-3 flex items-center justify-center">
+        <div className="min-h-screen p-3 flex items-center justify-center" style={{ backgroundColor: '#e6f4ff' }}>
           <div className="max-w-2xl w-full">
             <div className="bg-white rounded-3xl shadow-2xl p-8 text-center border-4 border-purple-200">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mb-4 animate-bounce">
@@ -264,14 +449,14 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 mb-6">
                 <div className="text-4xl mb-2">{percentage}%</div>
                 <p className="text-gray-700">
-                  {correctAnswers} {t.of} {totalQuizzes} {language === 'tr' ? 'doğru cevap' : 'goede antwoorden'}
+                  {scoringTotals.correct} {t.of} {scoringTotals.total} {language === 'tr' ? 'doğru cevap' : 'goede antwoorden'}
                 </p>
               </div>
               
               <p className="text-green-600 mb-6">
                 {percentage >= 80 
-                  ? (language === 'tr' ? '🎉 Harika iş! Sonraki derse hazırsın!' : '🎉 Geweldig werk! Je bent klaar voor de volgende les!')
-                  : (language === 'tr' ? '👍 İyi iş! Pratik yapmaya devam et!' : '👍 Goed gedaan! Blijf oefenen!')
+                  ? (language === 'tr' ? 'Harika i?! Sonraki derse haz?rs?n!' : 'Geweldig werk! Je bent klaar voor de volgende les!')
+                  : (language === 'tr' ? '?yi i?! Prati?e devam et!' : 'Goed gedaan! Blijf oefenen!')
                 }
               </p>
               
@@ -280,7 +465,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                   onClick={() => onComplete()}
                   className="px-10 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 flex items-center gap-3 shadow-lg"
                 >
-                  {language === 'tr' ? 'Ana sayfaya dön' : 'Terug naar dashboard'}
+                  {language === 'tr' ? 'Ana sayfaya d?n' : 'Terug naar dashboard'}
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
@@ -290,7 +475,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
       );
     }
 
-  // Study phase - Show one letter at a time
+// Study phase - Show one letter at a time
   const totalLetters = lesson.content.alphabetLetters?.length || 0;
   const currentLetter = lesson.content.alphabetLetters?.[currentLetterIndex];
   const isFirstLetter = currentLetterIndex === 0;
@@ -332,6 +517,8 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
       currentLetter.type && currentLetter.type !== 'normal'
         ? (language === 'tr' ? letterTypeLabels[currentLetter.type]?.tr : letterTypeLabels[currentLetter.type]?.nl)
         : null;
+    const neutralLabel = language === 'tr' ? 'Nötr' : 'Neutraal';
+    const isNeutral = currentLetter.type === 'normal';
     const typeText = currentLetter.type
       ? (currentLetter.note
           ? (language === 'tr' ? currentLetter.note.tr : currentLetter.note.nl)
@@ -357,150 +544,39 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
     const playLetterAudio = () => {
       if (!currentLetter) return;
 
-      const normalizeName = (value: string) =>
-        value
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z0-9 ()'-]+/g, '')
-          .replace(/\s+/g, ' ')
-          .trim();
+    const letterAudioByIndex: string[] = [
+      'alif',
+      'ba',
+      'ta (neutral)',
+      'tha',
+      'jim',
+      'ha early',
+      'kha',
+      'dal',
+      'dhal',
+      'ra',
+      'ze',
+      'sin',
+      'shin',
+      'sad',
+      'dad',
+      'ta (heavy)',
+      'za',
+      'ayn',
+      'ghayn',
+      'fa',
+      'qaf',
+      'kaf',
+      'lam',
+      'mim',
+      'nun',
+      'ha later',
+      'waw',
+      'ya'
+    ];
 
-      const letterAudioByArabic: Record<string, string> = {
-        'õ': 'alif',
-        'ù': 'ba',
-        '¦': 'ta (neutral)',
-        '®': 'tha',
-        'ª': 'jim',
-        'ð': 'ha early',
-        '©': 'kha',
-        'î': 'dal',
-        'ø': 'dhal',
-        'ñ': 'ra',
-        'ý': 'ze',
-        'ü': 'sin',
-        'ï': 'shin',
-        'æ': 'sad',
-        'ô': 'dad',
-        'ú': 'ta (heavy)',
-        '÷': 'za',
-        'û': 'ayn',
-        '§': 'ghayn',
-        'ë?': 'fa',
-        "ë'": 'qaf',
-        'ëŸ': 'kaf',
-        'ë"': 'lam',
-        'ë.': 'mim',
-        'ëÅ': 'nun',
-        'ëÎ': 'ha later',
-        'ë^': 'waw',
-        'ëS': 'ya'
-      };
-
-      const letterAudioByName: Record<string, string> = {
-        'alif': 'alif',
-        'ba': 'ba',
-        'ta': 'ta (neutral)',
-        'tha': 'tha',
-        'jim': 'jim',
-        'ha': 'ha later',
-        'ha neutral': 'ha later',
-        'ha later': 'ha later',
-        'ha earlier': 'ha early',
-        'ha early': 'ha early',
-        'ha neutral earlier in alphabet': 'ha early',
-        'ha neutral later in alphabet': 'ha later',
-        'kha': 'kha',
-        'dal': 'dal',
-        'dhal': 'dhal',
-        'ra': 'ra',
-        'ze': 'ze',
-        'zay': 'ze',
-        'sin': 'sin',
-        'seen': 'sin',
-        'shin': 'shin',
-        'sad': 'sad',
-        'dad': 'dad',
-        'ta heavy': 'ta (heavy)',
-        'ta neutral': 'ta (neutral)',
-        'za': 'za',
-        'ayn': 'ayn',
-        'ghayn': 'ghayn',
-        'fa': 'fa',
-        'qaf': 'qaf',
-        'kaf': 'kaf',
-        'lam': 'lam',
-        'mim': 'mim',
-        'nun': 'nun',
-        'waw': 'waw',
-        'waaw': 'waw',
-        'ya': 'ya',
-        'yaa': 'ya'
-      };
-
-      const letterAudioByIndex: string[] = [
-        'alif',
-        'ba',
-        'ta (neutral)',
-        'tha',
-        'jim',
-        'ha early',
-        'kha',
-        'dal',
-        'dhal',
-        'ra',
-        'ze',
-        'sin',
-        'shin',
-        'sad',
-        'dad',
-        'ta (heavy)',
-        'za',
-        'ayn',
-        'ghayn',
-        'fa',
-        'qaf',
-        'kaf',
-        'lam',
-        'mim',
-        'nun',
-        'ha later',
-        'waw',
-        'ya'
-      ];
-
-      const nameKey = normalizeName(currentLetter.name || '');
-      const fileName =
-        letterAudioByArabic[currentLetter.arabic] ||
-        letterAudioByName[nameKey] ||
-        letterAudioByIndex[currentLetterIndex];
-
-      if (!fileName) {
-        console.error('No audio mapping for letter', currentLetter);
-        return;
-      }
-
-      const candidatePaths = [`/audio/${encodeURIComponent(fileName)}.mp3`, `/Audio/${encodeURIComponent(fileName)}.mp3`];
-
-      const tryPlay = (index: number) => {
-        if (index >= candidatePaths.length) {
-          console.error('Failed to play letter audio for', currentLetter.name, 'tried', candidatePaths);
-          return;
-        }
-
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current.currentTime = 0;
-        }
-
-        const audio = new Audio(candidatePaths[index]);
-        audioRef.current = audio;
-        // Try next path only once on error; avoid duplicate retries from play().catch
-        audio.onerror = () => tryPlay(index + 1);
-        audio.play().catch(() => {});
-      };
-
-      tryPlay(0);
+      const fileName = letterAudioByIndex[currentLetterIndex % letterAudioByIndex.length];
+      playAudioClip(fileName);
     };
 
     const handleGoToQuestions = () => {
@@ -510,15 +586,44 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
         return;
       }
       
-      if (validQuizzes.length > 0) {
+      if (quizBundles.length > 0) {
+        setCurrentBundleIndex(0);
+        setCurrentQuizIndex(0);
         setPhase('quiz');
       } else {
         setPhase('complete');
       }
     };
 
+    if (showIntro) {
+      return (
+        <div className="min-h-screen p-3" style={{ backgroundColor: '#e6f4ff' }}>
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-xl p-8 border border-purple-200">
+              <h1 className="text-3xl text-purple-800 mb-3 text-center">
+                {language === 'tr' ? '1. Derse Başla' : 'Start met les 1'}
+              </h1>
+              <p className="text-gray-700 text-center mb-6">
+                {language === 'tr'
+                  ? 'Bu derste Arap harflerini tanıyacak, sesleri dinleyip ayırt edecek ve hızlı tanıma alıştırmaları yapacaksın.'
+                  : 'In deze les leer je de Arabische letters herkennen, luister je naar de klanken en oefen je met snelle herkenning.'}
+              </p>
+              <div className="text-center">
+                <button
+                  onClick={() => setShowIntro(false)}
+                  className="px-8 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl shadow-md transition-all"
+                >
+                  {language === 'tr' ? 'Derse Başla' : 'Begin met les 1'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="min-h-screen p-3" style={{ background: `linear-gradient(to bottom right, ${lesson.content.color}15, ${lesson.content.color}30)` }}>
+      <div className="min-h-screen p-3" style={{ backgroundColor: '#e6f4ff' }}>
         <div className="max-w-4xl mx-auto">
           <div className="mb-3">
             <button
@@ -560,14 +665,6 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
           <div className="bg-white rounded-2xl shadow-xl p-4 mb-3 border-4" style={{ borderColor: bgColor }}>
             <div className="grid md:grid-cols-3 gap-4 mb-3">
               <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border-2 relative" style={{ borderColor: bgColor + '40' }}>
-                <button
-                  onClick={playLetterAudio}
-                  className="absolute top-2 right-2 p-2 rounded-full transition-all transform hover:scale-110 flex items-center justify-center text-white shadow-lg text-xs"
-                  style={{ backgroundColor: bgColor }}
-                  aria-label="Play letter sound"
-                >
-                  <Volume2 className="w-4 h-4" />
-                </button>
                 <div 
                   className="flex items-center justify-center arabic-text"
                   style={{ 
@@ -585,9 +682,19 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                 <p className="text-gray-600 text-xs mb-1">{t.letterName}</p>
                 <p className="text-xl font-semibold text-gray-900">{currentLetter.name}</p>
                 <p className="text-gray-600 text-xs mt-3 mb-1">{t.letterPronunciationLabel}</p>
-                <p className="text-gray-800 text-lg">
-                  {language === 'tr' ? currentLetter.pronunciation.tr : currentLetter.pronunciation.nl}
-                </p>
+                <div className="flex items-center gap-3">
+                  <p className="text-gray-800 text-lg">
+                    {language === 'tr' ? currentLetter.pronunciation.tr : currentLetter.pronunciation.nl}
+                  </p>
+                  <Button
+                    size="sm"
+                    onClick={playLetterAudio}
+                    className="bg-purple-500 hover:bg-purple-600 text-white"
+                  >
+                    <Volume2 className="w-4 h-4 mr-1" />
+                    {language === 'tr' ? 'Dinle' : 'Luister'}
+                  </Button>
+                </div>
               </div>
 
               {currentLetter.word && (
@@ -616,9 +723,9 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                   {t.typeInfo}
                 </div>
                 <div className="flex-1">
-                  {currentTypeLabel && (
+                  {(currentTypeLabel || isNeutral) && (
                     <p className="text-sm font-semibold text-gray-900 mb-1">
-                      {currentTypeLabel}
+                      {currentTypeLabel || neutralLabel}
                     </p>
                   )}
                   {typeText && (
@@ -661,7 +768,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                 className="flex-1 py-3 rounded-xl transition-all transform hover:scale-105 flex items-center justify-center gap-2 text-white"
                 style={{ background: `linear-gradient(to right, ${lesson.content.color}, ${lesson.content.color}dd)` }}
               >
-                {validQuizzes.length > 0 ? t.goToQuestions : t.complete}
+                {quizBundles.length > 0 ? t.goToQuestions : t.complete}
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
@@ -709,7 +816,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
     }
 
     return (
-      <div className="min-h-screen p-3" style={{ background: `linear-gradient(to bottom right, ${lesson.content.color}15, ${lesson.content.color}30)` }}>
+      <div className="min-h-screen p-3" style={{ backgroundColor: '#e6f4ff' }}>
         <div className="max-w-6xl mx-auto">
           <div className="mb-4">
             <button
@@ -823,7 +930,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
   }
 
   return (
-    <div className="min-h-screen p-3" style={{ background: `linear-gradient(to bottom right, ${lesson.content.color}15, ${lesson.content.color}30)` }}>
+    <div className="min-h-screen p-3" style={{ backgroundColor: '#e6f4ff' }}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-3">
@@ -854,10 +961,10 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
             <div 
               className="arabic-text p-6 rounded-xl flex items-center justify-center"
               style={{ 
-                fontSize: '6rem',
+                fontSize: '5rem',
                 backgroundColor: `${lesson.content.color}10`,
                 color: '#1f2937',
-                minHeight: '150px'
+                minHeight: '120px'
               }}
             >
               {currentItem.arabic}

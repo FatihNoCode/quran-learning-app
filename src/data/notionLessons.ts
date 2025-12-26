@@ -5,19 +5,19 @@ export interface LessonContent {
   type: 'alphabet-detail' | 'letter-grid' | 'letter-practice' | 'letter-positions' | 'letter-connected' | 
         'letter-haraka' | 'haraka-practice';
   title: string; // Only Turkish as in original pages
-  titleTranslations?: { tr: string; nl: string };
+  titleTranslations: { tr: string; nl: string };
   instruction: string; // Only Turkish as in original pages
-  alphabetLetters?: AlphabetLetter[];
-  letterGroups?: string[][]; // For grouped letter display
-  items?: LessonItem[];
-  letterIds?: string[]; // Reference to letter IDs in ARABIC_LETTERS
-  color?: string;
+  alphabetLetters: AlphabetLetter[];
+  letterGroups: string[][]; // For grouped letter display
+  items: LessonItem[];
+  letterIds: string[]; // Reference to letter IDs in ARABIC_LETTERS
+  color: string;
 }
 
 export interface LessonItem {
   arabic: string;
-  transliteration?: string;
-  explanation?: string;
+  transliteration: string;
+  explanation: string;
 }
 
 export type AlphabetLetterType = 'normal' | 'heavy' | 'interdental' | 'heavy-interdental';
@@ -31,7 +31,7 @@ export interface AlphabetLetter {
     translation: { tr: string; nl: string }; // Meaning of the example word
   };
   type: AlphabetLetterType;
-  note?: { tr: string; nl: string }; // Optional extra note for the letter type
+  note: { tr: string; nl: string }; // Optional extra note for the letter type
 }
 
 export interface Lesson {
@@ -39,42 +39,64 @@ export interface Lesson {
   order: number;
   level: string;
   content: LessonContent;
-  quizzes?: Quiz[];
+  quizzes: Quiz[];
 }
 
 // Quiz types
-export type QuizType = 'multiple-choice' | 'drag-drop' | 'listen-choose' | 'true-false' | 'order-sequence';
+export type QuizType =
+  | 'multiple-choice'
+  | 'drag-drop'
+  | 'listen-choose'
+  | 'true-false'
+  | 'order-sequence'
+  | 'audio-mc'
+  | 'timed-audio-mc'
+  | 'error-detection'
+  | 'production';
 
 export interface Quiz {
   id: string;
   type: QuizType;
   skill: string;
+  bundleId: string;
+  bundleTitle: string;
+  audioId: string;
+  timeLimitSeconds: number;
+  promptLetter: string;
+  shuffleOptions: boolean;
+  scoringDisabled: boolean;
+  promptWord: string;
+  promptAudioId?: string;
+  promptMeaning?: {
+    tr: string;
+    nl: string;
+  };
   question: {
     tr: string;
     nl: string;
   };
-  options?: {
+  options: {
     tr: string;
     nl: string;
   }[];
-  correctAnswer?: number;
-  items?: {
+  correctAnswer: number;
+  items: {
     id: string;
     content: {
       tr: string;
       nl: string;
     };
   }[];
-  correctPairs?: { sourceId: string; targetId: string }[];
-  sequence?: {
+  correctPairs: { sourceId: string; targetId: string }[];
+  sequence: {
     id: string;
     content: {
       tr: string;
       nl: string;
     };
   }[];
-  correctOrder?: string[];
-  audioUrl?: string;
+  correctOrder: string[];
+  audioUrl: string;
 }
 
 // Lesson 1: ARAP ALFABESİ (Arabic Alphabet)
@@ -374,7 +396,551 @@ const lesson1: Lesson = {
     ],
     color: '#10B981' // Green
   },
-  quizzes: [{"id": "quiz-1-mc-1","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Sin\" hangi harftir?","nl": "Welke letter is \"Shin\"?"},"options": [{"tr": "س","nl": "س"},{"tr": "ش","nl": "ش"},{"tr": "ص","nl": "ص"},{"tr": "ث","nl": "ث"}],"correctAnswer": 1},{"id": "quiz-1-tf-1","type": "true-false","skill": "letter-property","question": {"tr": "لا, Lam + Elif birlesimidir.","nl": "لا is een combinatie van Lam + Alif."},"options": [{"tr": "Dogru","nl": "Waar"},{"tr": "Yanlis","nl": "Onwaar"}],"correctAnswer": 0},{"id": "quiz-1-dd-1","type": "drag-drop","skill": "letter-name","question": {"tr": "Harfleri dogru adlariyla eslestir.","nl": "Koppel de letters aan de juiste naam."},"items": [{"id": "letter-mim","content": {"tr": "م","nl": "م"}},{"id": "letter-ra","content": {"tr": "ر","nl": "ر"}},{"id": "letter-fa","content": {"tr": "ف","nl": "ف"}},{"id": "sound-ra","content": {"tr": "Ra","nl": "Ra"}},{"id": "sound-mim","content": {"tr": "Mim","nl": "Mim"}},{"id": "sound-fa","content": {"tr": "Fe","nl": "Fe"}}],"correctPairs": [{"sourceId": "letter-ra","targetId": "sound-ra"},{"sourceId": "letter-mim","targetId": "sound-mim"},{"sourceId": "letter-fa","targetId": "sound-fa"}]},{"id": "quiz-1-mc-2","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Kef\" hangi Arap harfidir?","nl": "Welke Arabische letter is \"Kef\"?"},"options": [{"tr": "ق","nl": "ق"},{"tr": "ك","nl": "ك"},{"tr": "ل","nl": "ل"},{"tr": "ف","nl": "ف"}],"correctAnswer": 1},{"id": "quiz-1-tf-2","type": "true-false","skill": "letter-property","question": {"tr": "Vav (و), Nun (ن) ile ayni yazilir.","nl": "Waw (و) wordt hetzelfde geschreven als Nun (ن)."},"options": [{"tr": "Dogru","nl": "Waar"},{"tr": "Yanlis","nl": "Onwaar"}],"correctAnswer": 1},{"id": "quiz-1-mc-3","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Zel\" hangi harftir?","nl": "Welke letter is \"Dhal\"?"},"options": [{"tr": "ز","nl": "ز"},{"tr": "د","nl": "د"},{"tr": "ذ","nl": "ذ"},{"tr": "ر","nl": "ر"}],"correctAnswer": 2},{"id": "quiz-1-dd-2","type": "drag-drop","skill": "letter-sound","question": {"tr": "Sesleri dogru harfle eslestir.","nl": "Koppel de geluiden aan de juiste letter."},"items": [{"id": "letter-alif","content": {"tr": "ا","nl": "ا"}},{"id": "letter-ba","content": {"tr": "ب","nl": "ب"}},{"id": "letter-ta","content": {"tr": "ت","nl": "ت"}},{"id": "sound-ba","content": {"tr": "Ses: \"ba\"","nl": "Geluid: \"ba\""}},{"id": "sound-ta","content": {"tr": "Ses: \"ta\"","nl": "Geluid: \"ta\""}},{"id": "sound-alif","content": {"tr": "Ses: \"elif\"","nl": "Geluid: \"alif\""}}],"correctPairs": [{"sourceId": "letter-ba","targetId": "sound-ba"},{"sourceId": "letter-ta","targetId": "sound-ta"},{"sourceId": "letter-alif","targetId": "sound-alif"}]},{"id": "quiz-1-mc-4","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Ayn\" hangi harftir?","nl": "Welke letter is \"Ayn\"?"},"options": [{"tr": "غ","nl": "غ"},{"tr": "ع","nl": "ع"},{"tr": "ح","nl": "ح"},{"tr": "خ","nl": "خ"}],"correctAnswer": 1},{"id": "quiz-1-tf-3","type": "true-false","skill": "letter-property","question": {"tr": "Sin (س) ustunde uc nokta vardir.","nl": "Sin (س) heeft drie punten erboven."},"options": [{"tr": "Dogru","nl": "Waar"},{"tr": "Yanlis","nl": "Onwaar"}],"correctAnswer": 1},{"id": "quiz-1-mc-5","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"He\" hangi harftir?","nl": "Welke letter is \"He\"?"},"options": [{"tr": "ه","nl": "ه"},{"tr": "ح","nl": "ح"},{"tr": "ع","nl": "ع"},{"tr": "م","nl": "م"}],"correctAnswer": 0},{"id": "quiz-1-dd-3","type": "drag-drop","skill": "letter-feature","question": {"tr": "Noktali ve noktasiz harfleri kutulara ayir.","nl": "Sorteer in vakken: met punten / zonder punten."},"items": [{"id": "letter-ba","content": {"tr": "ب","nl": "ب"}},{"id": "letter-ta","content": {"tr": "ت","nl": "ت"}},{"id": "letter-ra","content": {"tr": "ر","nl": "ر"}},{"id": "letter-lam","content": {"tr": "ل","nl": "ل"}},{"id": "letter-nun","content": {"tr": "ن","nl": "ن"}},{"id": "letter-sin","content": {"tr": "س","nl": "س"}},{"id": "sound-dots","content": {"tr": "Noktali","nl": "Met punten"}},{"id": "sound-no-dots","content": {"tr": "Noktasiz","nl": "Zonder punten"}}],"correctPairs": [{"sourceId": "letter-ba","targetId": "sound-dots"},{"sourceId": "letter-ta","targetId": "sound-dots"},{"sourceId": "letter-nun","targetId": "sound-dots"},{"sourceId": "letter-sin","targetId": "sound-dots"},{"sourceId": "letter-ra","targetId": "sound-no-dots"},{"sourceId": "letter-lam","targetId": "sound-no-dots"}]},{"id": "quiz-1-mc-6","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Kaf\" hangi harftir?","nl": "Welke letter is \"Kaf\"?"},"options": [{"tr": "ق","nl": "ق"},{"tr": "ك","nl": "ك"},{"tr": "ف","nl": "ف"},{"tr": "غ","nl": "غ"}],"correctAnswer": 0},{"id": "quiz-1-tf-4","type": "true-false","skill": "letter-property","question": {"tr": "Se (ث) ustunde uc nokta vardir.","nl": "Tha (ث) heeft drie punten erboven."},"options": [{"tr": "Dogru","nl": "Waar"},{"tr": "Yanlis","nl": "Onwaar"}],"correctAnswer": 0},{"id": "quiz-1-mc-7","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Dal\" hangi harftir?","nl": "Welke letter is \"Dal\"?"},"options": [{"tr": "د","nl": "د"},{"tr": "ذ","nl": "ذ"},{"tr": "ز","nl": "ز"},{"tr": "ر","nl": "ر"}],"correctAnswer": 0},{"id": "quiz-1-dd-4","type": "drag-drop","skill": "letter-name","question": {"tr": "Harfleri adlariyla eslestir.","nl": "Koppel de letters aan hun namen."},"items": [{"id": "letter-sad","content": {"tr": "ص","nl": "ص"}},{"id": "letter-ta","content": {"tr": "ط","nl": "ط"}},{"id": "letter-za","content": {"tr": "ظ","nl": "ظ"}},{"id": "sound-sad","content": {"tr": "Sad","nl": "Sad"}},{"id": "sound-ta","content": {"tr": "Ti","nl": "Ti"}},{"id": "sound-za","content": {"tr": "Zi","nl": "Zi"}}],"correctPairs": [{"sourceId": "letter-sad","targetId": "sound-sad"},{"sourceId": "letter-ta","targetId": "sound-ta"},{"sourceId": "letter-za","targetId": "sound-za"}]},{"id": "quiz-1-mc-8","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Mim\" hangi harftir?","nl": "Welke letter is \"Mim\"?"},"options": [{"tr": "ن","nl": "ن"},{"tr": "ل","nl": "ل"},{"tr": "م","nl": "م"},{"tr": "ه","nl": "ه"}],"correctAnswer": 2},{"id": "quiz-1-tf-5","type": "true-false","skill": "letter-property","question": {"tr": "Fe (ف) ustunde bir nokta vardir.","nl": "Fa (ف) heeft een punt erboven."},"options": [{"tr": "Dogru","nl": "Waar"},{"tr": "Yanlis","nl": "Onwaar"}],"correctAnswer": 0},{"id": "quiz-1-mc-9","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Ze\" hangi harftir?","nl": "Welke letter is \"Ze\"?"},"options": [{"tr": "ر","nl": "ر"},{"tr": "ذ","nl": "ذ"},{"tr": "ز","nl": "ز"},{"tr": "د","nl": "د"}],"correctAnswer": 2},{"id": "quiz-1-dd-5","type": "drag-drop","skill": "letter-sound","question": {"tr": "Sesleri dogru harfe birak.","nl": "Sleep het geluid naar de juiste letter."},"items": [{"id": "letter-sin","content": {"tr": "س","nl": "س"}},{"id": "letter-shin","content": {"tr": "ش","nl": "ش"}},{"id": "sound-sin","content": {"tr": "Ses: \"sin\"","nl": "Geluid: \"sin\""}},{"id": "sound-shin","content": {"tr": "Ses: \"sin\" (shin)","nl": "Geluid: \"shin\""}}],"correctPairs": [{"sourceId": "letter-sin","targetId": "sound-sin"},{"sourceId": "letter-shin","targetId": "sound-shin"}]},{"id": "quiz-1-mc-10","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Ha\" hangi harftir?","nl": "Welke letter is \"Ha\"?"},"options": [{"tr": "ه","nl": "ه"},{"tr": "ح","nl": "ح"},{"tr": "خ","nl": "خ"},{"tr": "ع","nl": "ع"}],"correctAnswer": 0},{"id": "quiz-1-tf-6","type": "true-false","skill": "letter-property","question": {"tr": "Cim (ج) ustunde nokta vardir.","nl": "Jim (ج) heeft een punt erboven."},"options": [{"tr": "Dogru","nl": "Waar"},{"tr": "Yanlis","nl": "Onwaar"}],"correctAnswer": 1},{"id": "quiz-1-mc-11","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Ya\" hangi harftir?","nl": "Welke letter is \"Ya\"?"},"options": [{"tr": "ي","nl": "ي"},{"tr": "و","nl": "و"},{"tr": "ه","nl": "ه"},{"tr": "ن","nl": "ن"}],"correctAnswer": 0},{"id": "quiz-1-seq-1","type": "order-sequence","skill": "letter-order","question": {"tr": "Elif-Ba sirasina gore dizin.","nl": "Zet in Elif-Ba volgorde."},"sequence": [{"id": "seq-alif","content": {"tr": "ا","nl": "ا"}},{"id": "seq-ba","content": {"tr": "ب","nl": "ب"}},{"id": "seq-ta","content": {"tr": "ت","nl": "ت"}},{"id": "seq-tha","content": {"tr": "ث","nl": "ث"}}],"correctOrder": ["seq-alif","seq-ba","seq-ta","seq-tha"]},{"id": "quiz-1-mc-12","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Lam\" hangi harftir?","nl": "Welke letter is \"Lam\"?"},"options": [{"tr": "ل","nl": "ل"},{"tr": "لا","nl": "لا"},{"tr": "م","nl": "م"},{"tr": "ك","nl": "ك"}],"correctAnswer": 0},{"id": "quiz-1-tf-7","type": "true-false","skill": "letter-property","question": {"tr": "Gayn (غ) ve Ayn (ع) benzer gorunur.","nl": "Ghayn (غ) en Ayn (ع) lijken op elkaar."},"options": [{"tr": "Dogru","nl": "Waar"},{"tr": "Yanlis","nl": "Onwaar"}],"correctAnswer": 0},{"id": "quiz-1-mc-13","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Dad\" hangi harftir?","nl": "Welke letter is \"Dad\"?"},"options": [{"tr": "ص","nl": "ص"},{"tr": "ض","nl": "ض"},{"tr": "ظ","nl": "ظ"},{"tr": "ط","nl": "ط"}],"correctAnswer": 1},{"id": "quiz-1-dd-6","type": "drag-drop","skill": "letter-feature","question": {"tr": "Nokta sayilarini eslestir.","nl": "Koppel letters aan het aantal punten."},"items": [{"id": "letter-ta","content": {"tr": "ت","nl": "ت"}},{"id": "letter-ba","content": {"tr": "ب","nl": "ب"}},{"id": "letter-tha","content": {"tr": "ث","nl": "ث"}},{"id": "sound-one-dot","content": {"tr": "1 nokta","nl": "1 punt"}},{"id": "sound-two-dots","content": {"tr": "2 nokta","nl": "2 punten"}},{"id": "sound-three-dots","content": {"tr": "3 nokta","nl": "3 punten"}}],"correctPairs": [{"sourceId": "letter-ba","targetId": "sound-one-dot"},{"sourceId": "letter-ta","targetId": "sound-two-dots"},{"sourceId": "letter-tha","targetId": "sound-three-dots"}]},{"id": "quiz-1-mc-14","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Nun\" hangi harftir?","nl": "Welke letter is \"Nun\"?"},"options": [{"tr": "ن","nl": "ن"},{"tr": "م","nl": "م"},{"tr": "ي","nl": "ي"},{"tr": "و","nl": "و"}],"correctAnswer": 0},{"id": "quiz-1-tf-8","type": "true-false","skill": "letter-property","question": {"tr": "Ra (ر) noktali midir?","nl": "Ra (ر) heeft punten."},"options": [{"tr": "Dogru","nl": "Waar"},{"tr": "Yanlis","nl": "Onwaar"}],"correctAnswer": 1},{"id": "quiz-1-mc-15","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Sad\" hangi harftir?","nl": "Welke letter is \"Sad\"?"},"options": [{"tr": "ص","nl": "ص"},{"tr": "س","nl": "س"},{"tr": "ش","nl": "ش"},{"tr": "ض","nl": "ض"}],"correctAnswer": 0},{"id": "quiz-1-dd-7","type": "drag-drop","skill": "letter-match","question": {"tr": "Eslesen sekilleri birlestir.","nl": "Sleep de bijpassende paren."},"items": [{"id": "letter-ayn","content": {"tr": "ع","nl": "ع"}},{"id": "letter-dal","content": {"tr": "د","nl": "د"}},{"id": "letter-sin","content": {"tr": "س","nl": "س"}},{"id": "sound-ghayn","content": {"tr": "غ","nl": "غ"}},{"id": "sound-dhal","content": {"tr": "ذ","nl": "ذ"}},{"id": "sound-shin","content": {"tr": "ش","nl": "ش"}}],"correctPairs": [{"sourceId": "letter-ayn","targetId": "sound-ghayn"},{"sourceId": "letter-dal","targetId": "sound-dhal"},{"sourceId": "letter-sin","targetId": "sound-shin"}]},{"id": "quiz-1-mc-16","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Hi\" hangi harftir?","nl": "Welke letter is \"Kha\"?"},"options": [{"tr": "ح","nl": "ح"},{"tr": "خ","nl": "خ"},{"tr": "ه","nl": "ه"},{"tr": "غ","nl": "غ"}],"correctAnswer": 1},{"id": "quiz-1-tf-9","type": "true-false","skill": "letter-property","question": {"tr": "Lam-Elif (لا) sik kullanilan tek sekil gibidir.","nl": "Lam-Alif (لا) wordt vaak samen als een vorm gebruikt."},"options": [{"tr": "Dogru","nl": "Waar"},{"tr": "Yanlis","nl": "Onwaar"}],"correctAnswer": 0},{"id": "quiz-1-mc-17","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Te\" hangi harftir?","nl": "Welke letter is \"Te\"?"},"options": [{"tr": "ت","nl": "ت"},{"tr": "ث","nl": "ث"},{"tr": "ب","nl": "ب"},{"tr": "ن","nl": "ن"}],"correctAnswer": 0},{"id": "quiz-1-dd-9","type": "drag-drop","skill": "letter-sound","question": {"tr": "Dinle ve dogru harfe birak (\"kaf\").","nl": "Luister en sleep naar de juiste letter (\"kaf\")."},"items": [{"id": "letter-qaf","content": {"tr": "ق","nl": "ق"}},{"id": "letter-kaf","content": {"tr": "ك","nl": "ك"}},{"id": "letter-fa","content": {"tr": "ف","nl": "ف"}},{"id": "letter-lam","content": {"tr": "ل","nl": "ل"}},{"id": "sound-kaf","content": {"tr": "Ses: \"kaf\"","nl": "Geluid: \"kaf\""}},{"id": "sound-qaf","content": {"tr": "Ses: \"qaf\"","nl": "Geluid: \"qaf\""}},{"id": "sound-fa","content": {"tr": "Ses: \"fe\"","nl": "Geluid: \"fa\""}},{"id": "sound-lam","content": {"tr": "Ses: \"lam\"","nl": "Geluid: \"lam\""}}],"correctPairs": [{"sourceId": "letter-kaf","targetId": "sound-kaf"},{"sourceId": "letter-qaf","targetId": "sound-qaf"},{"sourceId": "letter-fa","targetId": "sound-fa"},{"sourceId": "letter-lam","targetId": "sound-lam"}]},{"id": "quiz-1-mc-18","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Ti\" hangi harftir?","nl": "Welke letter is \"Ta dik\"?"},"options": [{"tr": "ت","nl": "ت"},{"tr": "ط","nl": "ط"},{"tr": "ظ","nl": "ظ"},{"tr": "ض","nl": "ض"}],"correctAnswer": 1},{"id": "quiz-1-tf-10","type": "true-false","skill": "letter-property","question": {"tr": "Za (ظ) noktalidir.","nl": "Za (ظ) heeft een punt."},"options": [{"tr": "Dogru","nl": "Waar"},{"tr": "Yanlis","nl": "Onwaar"}],"correctAnswer": 0},{"id": "quiz-1-mc-19","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Se\" hangi harftir?","nl": "Welke letter is \"Se\"?"},"options": [{"tr": "ش","nl": "ش"},{"tr": "ث","nl": "ث"},{"tr": "س","nl": "س"},{"tr": "ت","nl": "ت"}],"correctAnswer": 1},{"id": "quiz-1-dd-8","type": "drag-drop","skill": "letter-name","question": {"tr": "Hizli eslestirme: isimleri harflere birak.","nl": "Sleep de namen naar de letters."},"items": [{"id": "letter-qaf","content": {"tr": "ق","nl": "ق"}},{"id": "letter-waw","content": {"tr": "و","nl": "و"}},{"id": "letter-ya","content": {"tr": "ي","nl": "ي"}},{"id": "letter-ha","content": {"tr": "ه","nl": "ه"}},{"id": "sound-ha","content": {"tr": "He","nl": "He"}},{"id": "sound-ya","content": {"tr": "Ya","nl": "Ya"}},{"id": "sound-kaf","content": {"tr": "Kaf","nl": "Kaf"}},{"id": "sound-vav","content": {"tr": "Vav","nl": "Waw"}}],"correctPairs": [{"sourceId": "letter-ya","targetId": "sound-ya"},{"sourceId": "letter-waw","targetId": "sound-vav"},{"sourceId": "letter-qaf","targetId": "sound-kaf"},{"sourceId": "letter-ha","targetId": "sound-ha"}]},{"id": "quiz-1-mc-20","type": "multiple-choice","skill": "letter-recognition","question": {"tr": "\"Alif\" hangi harftir?","nl": "Welke letter is \"Alif\"?"},"options": [{"tr": "ب","nl": "ب"},{"tr": "ا","nl": "ا"},{"tr": "ل","nl": "ل"},{"tr": "د","nl": "د"}],"correctAnswer": 1}],
+
+
+  quizzes: [
+    // Bundle 1
+    {
+      id: 'l1-b1-q1',
+      bundleId: 'lesson-1-bundle-1',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: {
+        tr: 'Hangi harfi duyuyorsun?',
+        nl: 'Welke letter hoor je?'
+      },
+      audioId: 'ba',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ب', nl: 'ب' },
+        { tr: 'ت', nl: 'ت' },
+        { tr: 'ن', nl: 'ن' }
+      ],
+      correctAnswer: 0
+    },
+    {
+      id: 'l1-b1-q2',
+      bundleId: 'lesson-1-bundle-1',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: {
+        tr: 'Hangi harfi duyuyorsun?',
+        nl: 'Welke letter hoor je?'
+      },
+      audioId: 'ta (neutral)',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ب', nl: 'ب' },
+        { tr: 'ت', nl: 'ت' },
+        { tr: 'ن', nl: 'ن' }
+      ],
+      correctAnswer: 1
+    },
+    {
+      id: 'l1-b1-q3',
+      bundleId: 'lesson-1-bundle-1',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: {
+        tr: 'Hangi harfi duyuyorsun?',
+        nl: 'Welke letter hoor je?'
+      },
+      audioId: 'nun',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ب', nl: 'ب' },
+        { tr: 'ت', nl: 'ت' },
+        { tr: 'ن', nl: 'ن' }
+      ],
+      correctAnswer: 2
+    },
+    {
+      id: 'l1-b1-q4',
+      bundleId: 'lesson-1-bundle-1',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: {
+        tr: 'Hangi harfi duyuyorsun?',
+        nl: 'Welke letter hoor je?'
+      },
+      audioId: 'sin',
+      shuffleOptions: true,
+      options: [
+        { tr: 'س', nl: 'س' },
+        { tr: 'ش', nl: 'ش' },
+        { tr: 'ص', nl: 'ص' }
+      ],
+      correctAnswer: 0
+    },
+    {
+      id: 'l1-b1-q5',
+      bundleId: 'lesson-1-bundle-1',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: {
+        tr: 'Hangi harfi duyuyorsun?',
+        nl: 'Welke letter hoor je?'
+      },
+      audioId: 'shin',
+      shuffleOptions: true,
+      options: [
+        { tr: 'س', nl: 'س' },
+        { tr: 'ش', nl: 'ش' },
+        { tr: 'ص', nl: 'ص' }
+      ],
+      correctAnswer: 1
+    },
+    {
+      id: 'l1-b1-q6',
+      bundleId: 'lesson-1-bundle-1',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: {
+        tr: 'Hangi harfi duyuyorsun?',
+        nl: 'Welke letter hoor je?'
+      },
+      audioId: 'sad',
+      shuffleOptions: true,
+      options: [
+        { tr: 'س', nl: 'س' },
+        { tr: 'ش', nl: 'ش' },
+        { tr: 'ص', nl: 'ص' }
+      ],
+      correctAnswer: 2
+    },
+    {
+      id: 'l1-b1-q7',
+      bundleId: 'lesson-1-bundle-1',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: {
+        tr: 'Hangi harfi duyuyorsun?',
+        nl: 'Welke letter hoor je?'
+      },
+      audioId: 'dhal',
+      shuffleOptions: true,
+      options: [
+        { tr: 'د', nl: 'د' },
+        { tr: 'ذ', nl: 'ذ' },
+        { tr: 'ز', nl: 'ز' }
+      ],
+      correctAnswer: 1
+    },
+
+    // Bundle 2
+    {
+      id: 'l1-b2-q1',
+      bundleId: 'lesson-1-bundle-2',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: {
+        tr: 'Hangi harfi duyuyorsun?',
+        nl: 'Welke letter hoor je?'
+      },
+      audioId: 'ze',
+      shuffleOptions: true,
+      options: [
+        { tr: 'د', nl: 'د' },
+        { tr: 'ذ', nl: 'ذ' },
+        { tr: 'ز', nl: 'ز' }
+      ],
+      correctAnswer: 2
+    },
+    {
+      id: 'l1-b2-q2',
+      bundleId: 'lesson-1-bundle-2',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: {
+        tr: 'Hangi harfi duyuyorsun?',
+        nl: 'Welke letter hoor je?'
+      },
+      audioId: 'ha early',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ح', nl: 'ح' },
+        { tr: 'ه', nl: 'ه' },
+        { tr: 'خ', nl: 'خ' }
+      ],
+      correctAnswer: 0
+    },
+    {
+      id: 'l1-b2-q3',
+      bundleId: 'lesson-1-bundle-2',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: {
+        tr: 'Hangi harfi duyuyorsun?',
+        nl: 'Welke letter hoor je?'
+      },
+      audioId: 'kha',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ح', nl: 'ح' },
+        { tr: 'ه', nl: 'ه' },
+        { tr: 'خ', nl: 'خ' }
+      ],
+      correctAnswer: 2
+    },
+    {
+      id: 'l1-b2-q4',
+      bundleId: 'lesson-1-bundle-2',
+      bundleTitle: 'Lesson 1',
+      type: 'timed-audio-mc',
+      timeLimitSeconds: 5,
+      skill: 'fast-recognition',
+      question: {
+        tr: 'Duyduğun harfe dokun.',
+        nl: 'Tik op de letter die je hoort.'
+      },
+      audioId: 'kaf',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ك', nl: 'ك' },
+        { tr: 'ق', nl: 'ق' },
+        { tr: 'ف', nl: 'ف' }
+      ],
+      correctAnswer: 0
+    },
+    {
+      id: 'l1-b2-q5',
+      bundleId: 'lesson-1-bundle-2',
+      bundleTitle: 'Lesson 1',
+      type: 'timed-audio-mc',
+      timeLimitSeconds: 5,
+      skill: 'fast-recognition',
+      question: {
+        tr: 'Duyduğun harfe dokun.',
+        nl: 'Tik op de letter die je hoort.'
+      },
+      audioId: 'qaf',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ك', nl: 'ك' },
+        { tr: 'ق', nl: 'ق' },
+        { tr: 'ف', nl: 'ف' }
+      ],
+      correctAnswer: 1
+    },
+    {
+      id: 'l1-b2-q6',
+      bundleId: 'lesson-1-bundle-2',
+      bundleTitle: 'Lesson 1',
+      type: 'error-detection',
+      skill: 'error-detection',
+      question: {
+        tr: 'Ses, gösterilen harfle aynı mı?',
+        nl: 'Past het geluid bij de letter?'
+      },
+      promptLetter: 'س',
+      audioId: 'shin',
+      shuffleOptions: true,
+      options: [
+        { tr: 'Evet', nl: 'Ja' },
+        { tr: 'Hayır', nl: 'Nee' }
+      ],
+      correctAnswer: 1
+    },
+    {
+      id: 'l1-b2-q7',
+      bundleId: 'lesson-1-bundle-2',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: {
+        tr: 'Bu kelime hangi harfle başlıyor?',
+        nl: 'Met welke letter begint dit woord?'
+      },
+      promptWord: 'ṭayyib',
+      promptMeaning: { tr: 'temiz / iyi', nl: 'goed / puur' },
+      audioId: 'ta (heavy)',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ط', nl: 'ط' },
+        { tr: 'ت', nl: 'ت' },
+        { tr: 'د', nl: 'د' }
+      ],
+      correctAnswer: 0
+    },
+
+    // Bundle 3
+    {
+      id: 'l1-b3-q1',
+      bundleId: 'lesson-1-bundle-3',
+      bundleTitle: 'Lesson 1',
+      type: 'drag-drop',
+      skill: 'word-to-letter',
+      question: { tr: 'Kelimeyi doğru harfe sürükle.', nl: 'Sleep het woord naar de juiste letter.' },
+      items: [
+        { id: 'word-salam', content: { tr: 'salām', nl: 'salām' }, audioId: 'sin' },
+        { id: 'word-shams', content: { tr: 'shams', nl: 'shams' }, audioId: 'shin' },
+        { id: 'word-salah', content: { tr: 'ṣalāh', nl: 'ṣalāh' }, audioId: 'sad' },
+        { id: 'letter-sin', content: { tr: 'س', nl: 'س' } },
+        { id: 'letter-shin', content: { tr: 'ش', nl: 'ش' } },
+        { id: 'letter-sad', content: { tr: 'ص', nl: 'ص' } }
+      ],
+      correctPairs: [
+        { sourceId: 'word-salam', targetId: 'letter-sin' },
+        { sourceId: 'word-shams', targetId: 'letter-shin' },
+        { sourceId: 'word-salah', targetId: 'letter-sad' }
+      ]
+    },
+    {
+      id: 'l1-b3-q2',
+      bundleId: 'lesson-1-bundle-3',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: { tr: 'Bu kelime hangi harfle başlıyor?', nl: 'Met welke letter begint dit woord?' },
+      promptWord: 'salām',
+      promptMeaning: { tr: 'selam / barış', nl: 'vrede' },
+      audioId: 'sin',
+      shuffleOptions: true,
+      options: [
+        { tr: 'س', nl: 'س' },
+        { tr: 'ش', nl: 'ش' },
+        { tr: 'ص', nl: 'ص' }
+      ],
+      correctAnswer: 0
+    },
+    {
+      id: 'l1-b3-q3',
+      bundleId: 'lesson-1-bundle-3',
+      bundleTitle: 'Lesson 1',
+      type: 'timed-audio-mc',
+      timeLimitSeconds: 5,
+      skill: 'fast-recognition',
+      question: { tr: 'Duyduğun harfe dokun.', nl: 'Tik op de letter die je hoort.' },
+      promptWord: 'qur’ān',
+      promptMeaning: { tr: 'Kur’an', nl: 'Koran' },
+      audioId: 'qaf',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ك', nl: 'ك' },
+        { tr: 'ق', nl: 'ق' },
+        { tr: 'ف', nl: 'ف' }
+      ],
+      correctAnswer: 1
+    },
+    {
+      id: 'l1-b3-q4',
+      bundleId: 'lesson-1-bundle-3',
+      bundleTitle: 'Lesson 1',
+      type: 'error-detection',
+      skill: 'error-detection',
+      question: { tr: 'Ses, bu kelimenin ilk harfiyle aynı mı?', nl: 'Past het geluid bij de eerste letter van dit woord?' },
+      promptWord: 'kitāb',
+      promptMeaning: { tr: 'kitap', nl: 'boek' },
+      audioId: 'qaf',
+      promptAudioId: 'kaf',
+      shuffleOptions: true,
+      options: [
+        { tr: 'Evet', nl: 'Ja' },
+        { tr: 'Hayır', nl: 'Nee' }
+      ],
+      correctAnswer: 0
+    },
+    {
+      id: 'l1-b3-q5',
+      bundleId: 'lesson-1-bundle-3',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: { tr: 'Bu kelime hangi harfle başlıyor?', nl: 'Met welke letter begint dit woord?' },
+      promptWord: 'dhikr',
+      promptMeaning: { tr: 'zikir / anma', nl: 'gedenken / herinnering' },
+      audioId: 'dhal',
+      shuffleOptions: true,
+      options: [
+        { tr: 'د', nl: 'د' },
+        { tr: 'ذ', nl: 'ذ' },
+        { tr: 'ز', nl: 'ز' }
+      ],
+      correctAnswer: 1
+    },
+    {
+      id: 'l1-b3-q6',
+      bundleId: 'lesson-1-bundle-3',
+      bundleTitle: 'Lesson 1',
+      type: 'drag-drop',
+      skill: 'word-to-letter',
+      question: { tr: 'Kelimeyi doğru harfe sürükle.', nl: 'Sleep het woord naar de juiste letter.' },
+      items: [
+        { id: 'word-bayt', content: { tr: 'bayt', nl: 'bayt' }, audioId: 'ba' },
+        { id: 'word-tawbah', content: { tr: 'tawbah', nl: 'tawbah' }, audioId: 'ta (neutral)' },
+        { id: 'word-nas', content: { tr: 'nās', nl: 'nās' }, audioId: 'nun' },
+        { id: 'letter-ba', content: { tr: 'ب', nl: 'ب' } },
+        { id: 'letter-ta', content: { tr: 'ت', nl: 'ت' } },
+        { id: 'letter-nun', content: { tr: 'ن', nl: 'ن' } }
+      ],
+      correctPairs: [
+        { sourceId: 'word-bayt', targetId: 'letter-ba' },
+        { sourceId: 'word-tawbah', targetId: 'letter-ta' },
+        { sourceId: 'word-nas', targetId: 'letter-nun' }
+      ]
+    },
+    {
+      id: 'l1-b3-q7',
+      bundleId: 'lesson-1-bundle-3',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: { tr: 'Bu kelime hangi harfle başlıyor?', nl: 'Met welke letter begint dit woord?' },
+      promptWord: 'bayt',
+      promptMeaning: { tr: 'ev', nl: 'huis' },
+      audioId: 'ba',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ب', nl: 'ب' },
+        { tr: 'ت', nl: 'ت' },
+        { tr: 'ن', nl: 'ن' }
+      ],
+      correctAnswer: 0
+    },
+
+    // Bundle 4
+    {
+      id: 'l1-b4-q1',
+      bundleId: 'lesson-1-bundle-4',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: { tr: 'Bu kelime hangi harfle başlıyor?', nl: 'Met welke letter begint dit woord?' },
+      promptWord: 'hamd',
+      promptMeaning: { tr: 'övgü / hamd', nl: 'lof / prijzing' },
+      audioId: 'ha early',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ح', nl: 'ح' },
+        { tr: 'ه', nl: 'ه' },
+        { tr: 'خ', nl: 'خ' }
+      ],
+      correctAnswer: 0
+    },
+    {
+      id: 'l1-b4-q2',
+      bundleId: 'lesson-1-bundle-4',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: { tr: 'Bu kelime hangi harfle başlıyor?', nl: 'Met welke letter begint dit woord?' },
+      promptWord: 'hudā',
+      promptMeaning: { tr: 'hidayet', nl: 'leiding' },
+      audioId: 'ha later',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ح', nl: 'ح' },
+        { tr: 'ه', nl: 'ه' },
+        { tr: 'خ', nl: 'خ' }
+      ],
+      correctAnswer: 1
+    },
+    {
+      id: 'l1-b4-q3',
+      bundleId: 'lesson-1-bundle-4',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: { tr: 'Bu kelime hangi harfle başlıyor?', nl: 'Met welke letter begint dit woord?' },
+      promptWord: 'khayr',
+      promptMeaning: { tr: 'hayır / iyilik', nl: 'goedheid' },
+      audioId: 'kha',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ح', nl: 'ح' },
+        { tr: 'ه', nl: 'ه' },
+        { tr: 'خ', nl: 'خ' }
+      ],
+      correctAnswer: 2
+    },
+    {
+      id: 'l1-b4-q4',
+      bundleId: 'lesson-1-bundle-4',
+      bundleTitle: 'Lesson 1',
+      type: 'timed-audio-mc',
+      timeLimitSeconds: 5,
+      skill: 'fast-recognition',
+      question: { tr: 'Duyduğun harfe dokun.', nl: 'Tik op de letter die je hoort.' },
+      promptWord: 'ghafūr',
+      promptMeaning: { tr: 'çok bağışlayan', nl: 'zeer vergevend' },
+      audioId: 'ghayn',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ع', nl: 'ع' },
+        { tr: 'غ', nl: 'غ' },
+        { tr: 'ق', nl: 'ق' }
+      ],
+      correctAnswer: 1
+    },
+    {
+      id: 'l1-b4-q5',
+      bundleId: 'lesson-1-bundle-4',
+      bundleTitle: 'Lesson 1',
+      type: 'error-detection',
+      skill: 'error-detection',
+      question: { tr: 'Ses, bu kelimenin ilk harfiyle aynı mı?', nl: 'Past het geluid bij de eerste letter van dit woord?' },
+      promptWord: 'ʿilm',
+      promptMeaning: { tr: 'ilim / bilgi', nl: 'kennis' },
+      audioId: 'ayn',
+      promptAudioId: 'ayn',
+      shuffleOptions: true,
+      options: [
+        { tr: 'Evet', nl: 'Ja' },
+        { tr: 'Hayır', nl: 'Nee' }
+      ],
+      correctAnswer: 0
+    },
+    {
+      id: 'l1-b4-q6',
+      bundleId: 'lesson-1-bundle-4',
+      bundleTitle: 'Lesson 1',
+      type: 'timed-audio-mc',
+      timeLimitSeconds: 5,
+      skill: 'fast-recognition',
+      question: { tr: 'Duyduğun harfe dokun.', nl: 'Tik op de letter die je hoort.' },
+      promptWord: 'yawm',
+      promptMeaning: { tr: 'gün', nl: 'dag' },
+      audioId: 'ya',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ي', nl: 'ي' },
+        { tr: 'و', nl: 'و' },
+        { tr: 'ا', nl: 'ا' }
+      ],
+      correctAnswer: 0
+    },
+    {
+      id: 'l1-b4-q7',
+      bundleId: 'lesson-1-bundle-4',
+      bundleTitle: 'Lesson 1',
+      type: 'audio-mc',
+      skill: 'sound-discrimination',
+      question: {
+        tr: 'Bu kelime hangi harfle başlıyor?',
+        nl: 'Met welke letter begint dit woord?'
+      },
+      promptWord: 'ṣalāh',
+      promptMeaning: { tr: 'namaz', nl: 'gebed' },
+      audioId: 'sad',
+      shuffleOptions: true,
+      options: [
+        { tr: 'ص', nl: 'ص' },
+        { tr: 'س', nl: 'س' },
+        { tr: 'ش', nl: 'ش' }
+      ],
+      correctAnswer: 0
+    },
+  ],
 };
 
 // Lesson 2: Harfleri karışık şekilde okuyalım (Read letters in mixed order)
@@ -493,3 +1059,4 @@ export const getLessonsByLevel = (level: string): Lesson[] => {
 };
 
 export default lessons;
+
