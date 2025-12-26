@@ -106,10 +106,10 @@ const lesson1: Lesson = {
   level: 'Sayfa 1',
   content: {
     type: 'alphabet-detail',
-    title: 'Arap alfabesi - Kur\'an harfleri',
+    title: 'Ders 1: Arap alfabesi',
     titleTranslations: {
-      tr: 'Arap alfabesi - Kur\'an harfleri',
-      nl: 'Arabisch alfabet - Koranletters'
+      tr: 'Ders 1: Arap alfabesi',
+      nl: 'Les 1: Arabisch alfabet'
     },
     instruction: 'Her harfi dikkatle inceleyin ve telaffuzunu öğrenin!',
     alphabetLetters: [
@@ -748,7 +748,7 @@ const lesson1: Lesson = {
         { tr: 'Evet', nl: 'Ja' },
         { tr: 'Hayır', nl: 'Nee' }
       ],
-      correctAnswer: 0
+      correctAnswer: 1
     },
     {
       id: 'l1-b3-q5',
@@ -950,7 +950,11 @@ const lesson2: Lesson = {
   level: 'Sayfa 2',
   content: {
     type: 'letter-practice',
-    title: 'Harfleri karışık şekilde okuyalım',
+    title: 'Ders 2: alfabe farklı sırada',
+    titleTranslations: {
+      tr: 'Ders 2: alfabe farklı sırada',
+      nl: 'Les 2: alfabet in andere volgorde'
+    },
     instruction: 'Harfleri sağdan başlayarak okuyunuz!',
     items: [
       { arabic: 'ج' },

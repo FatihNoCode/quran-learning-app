@@ -786,9 +786,9 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
   
   // Handle letter-grid type (no items to iterate)
   if (lesson.content.type === 'letter-grid') {
-    if (completed) {
+if (completed) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-3 flex items-center justify-center">
+        <div className="min-h-screen p-3 flex items-center justify-center" style={{ backgroundColor: '#e6f4ff' }}>
           <div className="max-w-2xl w-full">
             <div className="bg-white rounded-3xl shadow-2xl p-8 text-center border-4 border-purple-200">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mb-4 animate-bounce">
@@ -902,7 +902,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
 
   if (completed) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-4 flex items-center justify-center">
+      <div className="min-h-screen p-4 flex items-center justify-center" style={{ backgroundColor: "#e6f4ff" }}>
         <div className="max-w-2xl w-full">
           <div className="bg-white rounded-3xl shadow-2xl p-12 text-center border-4 border-purple-200">
             <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mb-6 animate-bounce">

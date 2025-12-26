@@ -165,8 +165,14 @@ export default function Auth({ onLogin, language, onLanguageChange }: AuthProps)
           body: JSON.stringify(body)
         }
       );
-
-      const data = await response.json();
+      const rawText = await response.text();
+      let data: any = {};
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        // Non-JSON response; surface raw text
+        throw new Error(rawText || 'Authentication failed');
+      }
 
       if (response.ok && data.requiresManualLogin) {
         // User was created but auto-login failed, switch to login mode

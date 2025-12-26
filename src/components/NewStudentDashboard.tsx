@@ -10,24 +10,70 @@ import { Leaderboard } from './Leaderboard';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
-import { BookOpen, Brain, User, Star, Award, TrendingUp, Flame, Sparkles } from 'lucide-react';
+import { BookOpen, Brain, User, Star, Award, TrendingUp, Flame, Sparkles, CheckCircle, RefreshCcw } from 'lucide-react';
 import { StudentProgress, Badge, getDueReviewItems, updateStreak } from '../utils/masterySystem';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { toast } from 'sonner@2.0.3';
 import homeIcon from 'figma:asset/b064a1b5a53d37f1101ede8d5dc76112da50bd5a.png';
 import NewLessonViewer from './NewLessonViewer';
 
-type ActivityView = 'dashboard' | 'lesson' | 'practice' | 'profile' | 'trivia';
+// Simple Arabic letter covers for lesson cards
+const arabicLessonCovers = [
+  'ا','ب','ت','ث','ج','ح','خ','د','ذ','ر','ز','س','ش',
+  'ص','ض','ط','ظ','ع','غ','ف','ق','ك','ل','م','ن','ه'
+];
+
+function LockSvg() {
+  return (
+    <svg
+      viewBox="0 0 1024 1024"
+      xmlns="http://www.w3.org/2000/svg"
+      className="text-gray-700"
+      style={{ width: '10rem', height: '10rem' }} // ~160px (40 * 4px)
+      fill="currentColor"
+    >
+      <g strokeWidth="0" />
+      <g strokeLinecap="round" strokeLinejoin="round" />
+      <g>
+        <path
+          d="M766.879869 519.521462V353.548627c0-142.992753-114.521574-258.151183-255.343689-258.151184-140.760683 0-255.34369 115.15843-255.34369 256.683956V518.181196c-37.024717 34.791623-56.687411 83.945286-56.687411 147.908426 0 162.080023 118.224967 262.750476 308.517127 262.750476 192.404435 0 311.904139-101.372838 311.904138-264.665142 0-63.259731-17.936423-110.308285-53.046475-144.653494zM628.561153 350.963316v161.155455H392.768554V349.846257c0.143344-31.615531 12.351129-60.723567 34.549986-82.634713 22.280769-22.055514 51.993921-34.184459 83.530613-34.184459 31.615531 0 61.233462 12.128946 83.51423 34.184459 22.133329 21.911146 34.341114 51.020206 34.341114 81.981474l-0.143344 1.770298z"
+          fill="#27323A"
+        />
+        <path
+          d="M720.740525 540.047291c-29.108036-14.299582-69.754236-16.724143-69.754235-16.724143s-268.685939 0.013311-313.083655 0.01331c-11.364103 0-23.382469 6.193482-35.046571 14.906747-1.562449 3.382917-3.846737 6.432048-6.831363 8.857632-31.981058 25.405667-47.492921 64.410578-47.492921 118.989809 0 192.91433 181.484698 213.723775 259.491449 213.723775 164.635641 0 262.877438-80.562369 262.877438-215.639465 0-53.366951-14.489001-91.475963-44.237989-116.371734-2.536164-2.154255-4.435471-4.869599-5.922153-7.755931z"
+          fill="#F4CE73"
+        />
+        <path
+          d="M638.569632 526.418353c37.279665 0 72.388692 6.831363 87.262675 20.299551-4.915673-4.677108-7.978114-10.998576-7.978115-17.812533 0 0-0.065529-174.973811 0-176.823972 0-114.521574-92.564353-207.658278-206.318012-207.658278-113.756731 0-206.318012 93.136705-206.318012 209.125506v174.336954c0 7.46822-3.382917 14.492073-9.194491 19.215256 14.620059-13.740541 50.127378-20.682484 87.776665-20.682484H638.569632zM392.769578 349.846257c0.143344-31.615531 12.351129-60.723567 34.549986-82.634713 22.280769-22.055514 51.993921-34.184459 83.530613-34.184459 31.615531 0 61.233462 12.128946 83.51423 34.184459 22.133329 21.911146 34.341114 51.020206 34.341114 81.981474l-0.143344 1.771322V512.119795H392.769578V349.846257z"
+          fill="#79CCBF"
+        />
+        <path
+          d="M606.268098 257.794871c-25.486554-25.199866-59.366919-39.067368-95.434303-39.067368s-69.950822 13.867503-95.434304 39.067368c-25.568464 25.280753-39.642792 58.825284-39.642792 94.493353l-0.126962 165.959524c0 4.501 3.670629 8.170605 8.170605 8.170605H637.545747c4.501 0 8.170605-3.670629 8.170605-8.170605l0.127985-165.972835c0-35.684451-14.056922-69.232054-39.576239-94.480042z m6.781192 235.939015H408.329563l0.111604-141.413922c0-26.889276 10.628954-52.202793 29.938406-71.286992 19.325836-19.103652 45.051978-29.621002 72.454222-29.621002 27.402243 0 53.128386 10.51735 72.454221 29.621002 19.260307 19.054506 29.872878 44.365975 29.872878 71.241941l-0.111604 141.458973zM435.827027 653.705729c0 21.639816 10.913594 40.473163 27.065385 54.389812v69.198266c0 18.064409 14.620059 32.363991 32.42952 32.363991h28.726127c17.87499 0 32.363991-14.492073 32.363991-32.363991v-69.136833c16.214248-13.979106 27.130913-32.811429 27.130913-54.451245 0-40.727087-33.131905-73.858992-73.858992-73.858992s-73.856944 33.131905-73.856944 73.858992z"
+          fill="#27323A"
+        />
+        <path
+          d="M495.321932 776.974355l0.254947-83.690339-7.66071-4.784616c-12.128946-7.66071-19.404675-20.685555-19.404674-34.792647 0-22.662678 18.511847-41.175548 41.172476-41.175548 22.725135 0 41.175548 18.511847 41.175549 41.175548 0 14.106068-7.278801 27.130913-19.470204 34.792647l-7.66071 4.784616v84.010815l-28.406674-0.320476z"
+          fill="#FFFFFF"
+        />
+      </g>
+    </svg>
+  );
+}
+
+type ActivityView = 'dashboard' | 'lessons' | 'lesson' | 'practice' | 'profile' | 'trivia';
 
 interface NewStudentDashboardProps {
   context: AppContextType;
   onViewChange?: (view: ActivityView) => void;
+  onLogout?: () => void;
+  profileTrigger?: number;
 }
 
-export default function NewStudentDashboard({ context, onViewChange }: NewStudentDashboardProps) {
+export default function NewStudentDashboard({ context, onViewChange, onLogout, profileTrigger }: NewStudentDashboardProps) {
   const [currentView, setCurrentView] = useState<ActivityView>('dashboard');
   const [progress, setProgress] = useState<StudentProgress | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedLessonOrder, setSelectedLessonOrder] = useState<number | null>(null);
 
   const { user, accessToken, language } = context;
 
@@ -37,6 +83,13 @@ export default function NewStudentDashboard({ context, onViewChange }: NewStuden
       onViewChange(currentView);
     }
   }, [currentView, onViewChange]);
+
+  // External trigger to open profile
+  useEffect(() => {
+    if (profileTrigger && profileTrigger > 0) {
+      setCurrentView('profile');
+    }
+  }, [profileTrigger]);
 
   // Fetch progress from backend
   useEffect(() => {
@@ -55,6 +108,17 @@ export default function NewStudentDashboard({ context, onViewChange }: NewStuden
           }
         }
       );
+
+      if (response.status === 401) {
+        // Token expired or unauthorized; log out if handler provided
+        if (typeof onLogout === 'function') {
+          onLogout();
+          return;
+        }
+        toast.error(language === 'tr' ? 'Oturum geçersiz. Lütfen tekrar giriş yapın.' : 'Sessie verlopen. Log opnieuw in.');
+        setLoading(false);
+        return;
+      }
 
       if (!response.ok) {
         throw new Error('Failed to fetch progress');
@@ -136,17 +200,29 @@ export default function NewStudentDashboard({ context, onViewChange }: NewStuden
   };
 
   const handleLessonComplete = async (updatedProgress: StudentProgress, earnedBadges: Badge[]) => {
-    const saved = await saveProgress(updatedProgress);
+    if (!progress) return;
+
+    const normalized: StudentProgress = {
+      ...updatedProgress,
+      completedLessons: Array.from(new Set(updatedProgress.completedLessons)),
+      currentLessonOrder: Math.max(
+        progress.currentLessonOrder || 1,
+        updatedProgress.currentLessonOrder || 1
+      )
+    };
+
+    const saved = await saveProgress(normalized);
     
     if (saved && earnedBadges.length > 0) {
       toast.success(
         language === 'tr' 
-          ? `🎉 ${earnedBadges.length} yeni rozet kazandın!` 
-          : `🎉 Je hebt ${earnedBadges.length} nieuwe badge(s) verdiend!`
+          ? `?? ${earnedBadges.length} yeni rozet kazand?n!` 
+          : `?? Je hebt ${earnedBadges.length} nieuwe badge(s) verdiend!`
       );
     }
     
-    setCurrentView('dashboard');
+    setSelectedLessonOrder(null);
+    setCurrentView('lessons');
   };
 
   const handlePracticeComplete = async (updatedProgress: StudentProgress, earnedBadges: Badge[]) => {
@@ -186,41 +262,160 @@ export default function NewStudentDashboard({ context, onViewChange }: NewStuden
     );
   }
 
+  // Lessons overview
+  if (currentView === 'lessons') {
+    const alphabetLesson = getLessonByOrder(1);
+    const lessonCards = [
+      ...(alphabetLesson
+        ? [{
+            id: alphabetLesson.id,
+            order: alphabetLesson.order,
+            title: alphabetLesson.content.titleTranslations
+          }]
+        : []),
+      ...placeholderLessons
+        .filter(l => !(alphabetLesson && l.order === alphabetLesson.order))
+        .map(l => ({ id: l.id, order: l.order, title: l.title }))
+    ].sort((a, b) => a.order - b.order);
+
+    return (
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setCurrentView('dashboard')}
+            className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 border border-purple-200 rounded-full px-3 py-1 shadow-sm bg-white"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            {language === 'tr' ? 'Geri Dön' : 'Terug'}
+          </button>
+          <div className="flex items-center gap-3 text-sm text-gray-600">
+            <span className="inline-flex items-center gap-2 rounded-full border-2 border-green-400 bg-white px-3 py-1 shadow-sm">
+              <CheckCircle className="text-green-600" size={16} />
+              {language === 'tr' ? 'Tamamlandı' : 'Voltooid'}
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border-2 border-purple-400 bg-white px-3 py-1 shadow-sm">
+              <RefreshCcw className="text-purple-600" size={16} />
+              {language === 'tr' ? 'Tekrar Çalış' : 'Opnieuw doen'}
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold">
+            {language === 'tr' ? 'Dersler' : 'Lessen'}
+          </h2>
+          <p className="text-gray-600">
+            {language === 'tr'
+              ? 'Tamamladığın dersleri gözden geçir veya yeni derslere başla.'
+              : 'Bekijk afgeronde lessen of start een nieuwe les.'}
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4">
+          {lessonCards.map(lesson => {
+            const completed = progress.completedLessons.includes(lesson.id);
+            const isCurrent = progress.currentLessonOrder === lesson.order;
+            const unlocked = lesson.order <= progress.currentLessonOrder || completed;
+            const coverLetter = arabicLessonCovers[(lesson.order - 1) % arabicLessonCovers.length] || 'ا';
+            const redoLabel = language === 'tr' ? 'Tekrar et' : 'Opnieuw doen';
+            const baseTitle = lesson.title[language];
+            const displayTitle = baseTitle;
+
+            return (
+              <Card
+                key={lesson.id}
+                className={`relative p-0 overflow-hidden hover:shadow-xl transition ${
+                  unlocked ? 'cursor-pointer' : 'cursor-not-allowed'
+                } border-2 ${
+                  completed ? 'border-green-200 bg-gradient-to-br from-green-50 to-green-100' : 'border-purple-100 bg-gradient-to-br from-white to-purple-50'
+                } ${unlocked ? '' : 'grayscale opacity-70'}`}
+                onClick={() => {
+                  if (!unlocked) return;
+                  setSelectedLessonOrder(lesson.order);
+                  setCurrentView('lesson');
+                }}
+              >
+                {!unlocked && (
+                  <div className="absolute inset-0 bg-gray-200/70 flex items-center justify-center z-10">
+                    <div style={{ transform: 'translateY(12px)' }}>
+                      <LockSvg />
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-4 pb-2 flex items-center justify-between">
+                  <div className="w-full text-center text-lg font-semibold text-gray-900">
+                    {displayTitle}
+                  </div>
+                  {completed && <CheckCircle className="text-green-600" size={18} />}
+                </div>
+
+                <div className="px-5 pb-5 space-y-3">
+                  <div className="flex items-center justify-center pt-0 pb-6">
+                    <span className="arabic-text text-8xl text-purple-700" style={{ fontSize: '5rem' }}>
+                      {coverLetter}
+                    </span>
+                  </div>
+                  {completed && (
+                    <div className="flex flex-col items-center gap-2 pt-2 pb-6">
+                      <span className="px-4 py-1 rounded-full border-2 border-purple-400 bg-white text-purple-700 text-xs inline-flex items-center gap-2 shadow-sm">
+                        <RefreshCcw size={14} />
+                        {redoLabel}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   // Show lesson activity
   if (currentView === 'lesson') {
-    // Check if it's lesson 1 (Arabic Alphabet) from notionLessons
-    if (progress.currentLessonOrder === 1) {
-      const alphabetLesson = getLessonByOrder(1);
-      if (alphabetLesson) {
-        return (
-          <NewLessonViewer
-            lesson={alphabetLesson}
-            language={language}
-            onBack={() => setCurrentView('dashboard')}
-            onComplete={() => {
-              // Update progress for alphabet lesson completion
-              const updatedProgress: StudentProgress = {
-                ...progress,
-                currentLessonOrder: 2,
-                completedLessons: [...progress.completedLessons, alphabetLesson.id],
-                totalPoints: progress.totalPoints + 100,
-                stats: {
-                  ...progress.stats,
-                  totalQuizzesCompleted: progress.stats.totalQuizzesCompleted + 1,
-                  lastActive: new Date().toISOString()
-                }
-              };
-              handleLessonComplete(updatedProgress, []);
-            }}
-          />
-        );
-      }
+    const targetLessonOrder = Math.max(
+      1,
+      selectedLessonOrder ?? Math.min(progress.currentLessonOrder, placeholderLessons.length)
+    );
+    const goBackTo: ActivityView = selectedLessonOrder ? 'lessons' : 'dashboard';
+
+    const alphabetLesson = getLessonByOrder(targetLessonOrder);
+    if (alphabetLesson) {
+      return (
+        <NewLessonViewer
+          lesson={alphabetLesson}
+          language={language}
+          onBack={() => {
+            setSelectedLessonOrder(null);
+            setCurrentView(goBackTo);
+          }}
+          onComplete={() => {
+            const updatedProgress: StudentProgress = {
+              ...progress,
+              currentLessonOrder: Math.max(progress.currentLessonOrder, targetLessonOrder + 1),
+              completedLessons: Array.from(new Set([...progress.completedLessons, alphabetLesson.id])),
+              totalPoints: progress.totalPoints + 100,
+              stats: {
+                ...progress.stats,
+                totalQuizzesCompleted: progress.stats.totalQuizzesCompleted + 1,
+                lastActive: new Date().toISOString()
+              }
+            };
+            handleLessonComplete(updatedProgress, []);
+          }}
+        />
+      );
     }
     
     // For other lessons, use the placeholder lessons
-    const currentLesson = placeholderLessons.find(l => l.order === progress.currentLessonOrder);
+    const currentLesson = placeholderLessons.find(l => l.order === targetLessonOrder);
     if (!currentLesson) {
-      setCurrentView('dashboard');
+      setSelectedLessonOrder(null);
+      setCurrentView(goBackTo);
       return null;
     }
 
@@ -256,6 +451,7 @@ export default function NewStudentDashboard({ context, onViewChange }: NewStuden
         userId={user.id}
         accessToken={accessToken}
         onProgressReset={fetchProgress}
+        onLogout={onLogout}
       />
     );
   }
@@ -278,15 +474,17 @@ export default function NewStudentDashboard({ context, onViewChange }: NewStuden
   }
 
   // Dashboard view
-  // Get the current lesson - check if it's lesson 1 from notionLessons
+  // Get the current lesson title consistently from lesson data
   let currentLessonTitle = '';
-  if (progress.currentLessonOrder === 1) {
+  const lessonOrderForTitle = Math.max(1, Math.min(progress.currentLessonOrder, placeholderLessons.length));
+
+  if (lessonOrderForTitle === 1) {
     const alphabetLesson = getLessonByOrder(1);
-    currentLessonTitle = alphabetLesson 
-      ? (language === 'tr' ? 'Arap Alfabesi - Kuran Harfleri' : 'Arabisch Alfabet - Koran Letters')
+    currentLessonTitle = alphabetLesson
+      ? alphabetLesson.content.titleTranslations?.[language] || alphabetLesson.content.title
       : '';
   } else {
-    const currentLesson = placeholderLessons.find(l => l.order === progress.currentLessonOrder);
+    const currentLesson = placeholderLessons.find(l => l.order === lessonOrderForTitle);
     currentLessonTitle = currentLesson?.title[language] || '';
   }
   
@@ -369,20 +567,24 @@ export default function NewStudentDashboard({ context, onViewChange }: NewStuden
       </Card>
 
       {/* Action Buttons */}
-      <div className="grid md:grid-cols-4 gap-4">
-        {completedLessons < totalLessons && (
-          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('lesson')}>
-            <div className="flex flex-col items-center text-center gap-3">
-              <BookOpen className="text-purple-600" size={48} />
-              <h3 className="text-xl">
-                {language === 'tr' ? 'Ders Çalış' : 'Studeer Les'}
-              </h3>
-              <p className="text-sm text-gray-600">
-                {language === 'tr' ? 'Yeni konular öğren' : 'Leer nieuwe onderwerpen'}
-              </p>
-            </div>
-          </Card>
-        )}
+      <div className="grid md:grid-cols-3 gap-4">
+        <Card
+          className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => {
+            setSelectedLessonOrder(null);
+            setCurrentView('lessons');
+          }}
+        >
+          <div className="flex flex-col items-center text-center gap-3">
+            <BookOpen className="text-purple-600" size={48} />
+            <h3 className="text-xl">
+              {language === 'tr' ? 'Derslere Göz At' : 'Bekijk Lessen'}
+            </h3>
+            <p className="text-sm text-gray-600">
+              {language === 'tr' ? 'Tamamlanan veya yeni dersleri aç' : 'Open afgeronde of nieuwe lessen'}
+            </p>
+          </div>
+        </Card>
 
         <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('practice')}>
           <div className="flex flex-col items-center text-center gap-3">
@@ -411,17 +613,6 @@ export default function NewStudentDashboard({ context, onViewChange }: NewStuden
           </div>
         </Card>
 
-        <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('profile')}>
-          <div className="flex flex-col items-center text-center gap-3">
-            <User className="text-green-600" size={48} />
-            <h3 className="text-xl">
-              {language === 'tr' ? 'Profilim' : 'Mijn Profiel'}
-            </h3>
-            <p className="text-sm text-gray-600">
-              {language === 'tr' ? 'İlerlemeni gör' : 'Bekijk je voortgang'}
-            </p>
-          </div>
-        </Card>
       </div>
 
       {/* Recent Badges */}

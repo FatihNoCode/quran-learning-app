@@ -103,11 +103,11 @@ export function LessonActivity({ lesson, language, progress, onComplete }: Lesso
   };
 
   const handleComplete = () => {
-    // Mark lesson as completed
+    // Mark lesson as completed (without regressing progress)
     const finalProgress: StudentProgress = {
       ...updatedProgress,
-      completedLessons: [...updatedProgress.completedLessons, lesson.id],
-      currentLessonOrder: lesson.order + 1
+      completedLessons: Array.from(new Set([...updatedProgress.completedLessons, lesson.id])),
+      currentLessonOrder: Math.max(updatedProgress.currentLessonOrder || 1, lesson.order + 1)
     };
 
     onComplete(finalProgress, earnedBadges);
@@ -117,36 +117,18 @@ export function LessonActivity({ lesson, language, progress, onComplete }: Lesso
   if (phase === 'explanation') {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
-        <Card className="p-8 bg-gradient-to-br from-purple-50 to-pink-50">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-purple-500 p-3 rounded-xl">
-              <BookOpen className="text-white" size={32} />
-            </div>
-            <div>
-              <h2 className="text-3xl text-purple-800">{lesson.title[language]}</h2>
-              <p className="text-purple-600">
-                {language === 'tr' ? `Ders ${lesson.order}` : `Les ${lesson.order}`}
-              </p>
-            </div>
-          </div>
-
-          <div className="prose max-w-none mb-8">
-            <div className="whitespace-pre-line text-lg leading-relaxed">
-              {lesson.content[language]}
-            </div>
-          </div>
-
-          <div className="text-center">
-            <Button
-              onClick={handleStartQuiz}
-              size="lg"
-              className="bg-purple-500 hover:bg-purple-600 text-xl px-8 py-6"
-            >
-              {language === 'tr' ? 'Alıştırmalara başla' : 'Start met oefeningen'}
-              <ArrowRight className="ml-2" size={24} />
-            </Button>
-          </div>
+        <Card className="bg-white rounded-2xl shadow-xl p-8 border border-purple-200">
+          <h1 className="text-3xl text-purple-800 mb-3 text-center">
+            {lesson.title[language]}
+          </h1>
+          <p className="text-gray-700 text-center">
+            {language === 'tr'
+              ? 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
+              : 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'}
+          </p>
         </Card>
+
+        {/* Removed legacy gradient card */}
 
         
       </div>

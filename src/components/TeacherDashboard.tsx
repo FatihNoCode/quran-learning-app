@@ -268,19 +268,6 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 border-4 border-blue-200">
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-100 p-3 rounded-xl">
-            <Users className="text-blue-600" size={32} />
-          </div>
-          <div>
-            <h1 className="text-blue-800">{t.dashboard}</h1>
-            <p className="text-gray-600">{t.overview}</p>
-          </div>
-        </div>
-      </div>
-
       {/* Quick Action Buttons */}
       <div className="grid grid-cols-1 gap-4">
         <button

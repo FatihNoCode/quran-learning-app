@@ -26,10 +26,12 @@ const translations = {
     points: 'Puan',
     loading: 'Yükleniyor...',
     noData: 'Henüz veri yok',
+    notReady: 'Leaderboard henüz hazır değil.',
+    failed: 'Leaderboard yüklenemedi.',
     you: 'Sen'
   },
   nl: {
-    leaderboard: 'Klassement',
+    leaderboard: 'Ranglijst',
     topStudents: 'Top 5 Studenten',
     yourRank: 'Jouw Positie',
     rank: 'Rang',
@@ -37,6 +39,8 @@ const translations = {
     points: 'Punten',
     loading: 'Laden...',
     noData: 'Nog geen gegevens',
+    notReady: 'Leaderboard is nog niet beschikbaar.',
+    failed: 'Leaderboard kon niet worden geladen.',
     you: 'Jij'
   }
 };
@@ -44,6 +48,7 @@ const translations = {
 export function Leaderboard({ currentUserId, accessToken, language }: LeaderboardProps) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const t = translations[language];
 
   useEffect(() => {
@@ -52,6 +57,7 @@ export function Leaderboard({ currentUserId, accessToken, language }: Leaderboar
 
   const fetchLeaderboard = async () => {
     try {
+      setError(null);
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-33549613/leaderboard`,
         {
@@ -61,14 +67,23 @@ export function Leaderboard({ currentUserId, accessToken, language }: Leaderboar
         }
       );
 
-      const data = await response.json();
-      if (response.ok) {
+      const text = await response.text();
+
+      if (!response.ok) {
+        setError(response.status === 404 ? t.notReady : t.failed);
+        setLeaderboard([]);
+        return;
+      }
+
+      try {
+        const data = text ? JSON.parse(text) : {};
         setLeaderboard(data.leaderboard || []);
-      } else {
-        console.error('Error fetching leaderboard:', data);
+      } catch (parseError) {
+        setError(t.failed);
+        setLeaderboard([]);
       }
     } catch (error) {
-      console.error('Error fetching leaderboard:', error);
+      setError(t.failed);
     } finally {
       setLoading(false);
     }
@@ -127,11 +142,16 @@ export function Leaderboard({ currentUserId, accessToken, language }: Leaderboar
         </div>
       </div>
 
-      {leaderboard.length === 0 ? (
+      {error ? (
         <div className="text-center py-8 text-gray-500">
           <Trophy size={48} className="mx-auto mb-4 opacity-50" />
-          <p>{t.noData}</p>
+          <p>{error}</p>
         </div>
+      ) : leaderboard.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <Trophy size={48} className="mx-auto mb-4 opacity-50" />
+            <p>{t.noData}</p>
+          </div>
       ) : (
         <div className="space-y-3">
           {/* Top 5 Students */}

@@ -313,6 +313,14 @@ const isTeacher = (user: any) =>
 // Enable logger
 app.use('*', logger(console.log));
 
+// Explicit OPTIONS handler to ensure preflight succeeds
+app.options('/*', (c) => {
+  c.header('Access-Control-Allow-Origin', '*');
+  c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  return c.body(null, 204);
+});
+
 // Enable CORS for all routes and methods
 app.use(
   "/*",
@@ -331,7 +339,7 @@ app.get("/health", (c) => {
 });
 
 // Sign up endpoint - creates a new user
-app.post("/signup", async (c) => {
+const handleSignup = async (c: any) => {
   try {
     const { username, password, name, role, teacherCode } = await c.req.json();
     
@@ -448,10 +456,12 @@ app.post("/signup", async (c) => {
     console.log(`Error in signup endpoint: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
-});
+};
+app.post("/signup", handleSignup);
+app.post("/make-server-33549613/signup", handleSignup);
 
 // Sign in endpoint
-app.post("/signin", async (c) => {
+const handleSignin = async (c: any) => {
   try {
     const { username, password } = await c.req.json();
 
@@ -496,10 +506,12 @@ app.post("/signin", async (c) => {
     console.log(`Error in signin endpoint: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
-});
+};
+app.post("/signin", handleSignin);
+app.post("/make-server-33549613/signin", handleSignin);
 
-// Get student progress (requires auth)
-app.get("/progress/:userId", async (c) => {
+// Shared handler for fetching progress
+const handleGetProgress = async (c: any) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -513,10 +525,29 @@ app.get("/progress/:userId", async (c) => {
     }
 
     const userId = c.req.param('userId');
-    const progress = await kv.get(`progress:${userId}`);
+    let progress = await kv.get(`progress:${userId}`);
 
+    // If missing, bootstrap a default progress so the client never sees a 404
     if (!progress) {
-      return c.json({ error: "Progress not found" }, 404);
+      const username =
+        user?.user_metadata?.username ||
+        user?.email?.split('@')[0] ||
+        'student';
+      const name = user?.user_metadata?.name || username;
+
+      progress = {
+        userId,
+        username,
+        name,
+        currentLevel: 'letters',
+        currentLessonIndex: 0,
+        currentLessonOrder: 1,
+        completedLessons: [],
+        reviewItems: [],
+        totalPoints: 0,
+        lastActive: new Date().toISOString(),
+      };
+      await kv.set(`progress:${userId}`, progress);
     }
 
     return c.json({ progress });
@@ -524,10 +555,15 @@ app.get("/progress/:userId", async (c) => {
     console.log(`Error getting progress: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
-});
+};
+
+// Get student progress (requires auth)
+app.get("/progress/:userId", handleGetProgress);
+// Support prefixed path in case the function name is retained in the URL
+app.get("/make-server-33549613/progress/:userId", handleGetProgress);
 
 // Update student progress (requires auth)
-app.post("/progress/:userId", async (c) => {
+const handlePostProgress = async (c: any) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -560,7 +596,9 @@ app.post("/progress/:userId", async (c) => {
     console.log(`Error updating progress: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
-});
+};
+app.post("/progress/:userId", handlePostProgress);
+app.post("/make-server-33549613/progress/:userId", handlePostProgress);
 
 // Get all students (for teacher dashboard, requires auth)
 app.get("/students", async (c) => {
@@ -1082,6 +1120,50 @@ app.delete("/content/quizzes/:quizId", async (c) => {
     return c.json({ error: error.message }, 500);
   }
 });
+
+
+// Shared handler for leaderboard
+const handleLeaderboard = async (c: any) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    if (!user || error) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const studentIds: string[] = await kv.get('students') || [];
+    const leaderboard: any[] = [];
+
+    for (const studentId of studentIds) {
+      const progress = await kv.get(`progress:${studentId}`);
+      if (!progress) continue;
+      const userData = await kv.get(`user:${progress.username}`);
+      leaderboard.push({
+        userId: studentId,
+        username: progress.username || userData?.username || '',
+        name: progress.name || userData?.name || '',
+        totalPoints: progress.totalPoints || 0,
+      });
+    }
+
+    leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
+    const ranked = leaderboard.map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+
+    return c.json({ leaderboard: ranked });
+  } catch (error) {
+    console.log(`Error fetching leaderboard: ${error.message}`);
+    return c.json({ error: error.message }, 500);
+  }
+};
+// Leaderboard endpoint (auth required)
+app.get('/leaderboard', handleLeaderboard);
+// Support prefixed path
+app.get('/make-server-33549613/leaderboard', handleLeaderboard);
 
 Deno.serve(app.fetch);
 

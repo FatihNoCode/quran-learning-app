@@ -12,9 +12,10 @@ interface StudentProfileProps {
   userId: string;
   accessToken: string;
   onProgressReset: () => void;
+  onLogout?: () => void;
 }
 
-export function StudentProfile({ progress, language, onClose, userId, accessToken, onProgressReset }: StudentProfileProps) {
+export function StudentProfile({ progress, language, onClose, userId, accessToken, onProgressReset, onLogout }: StudentProfileProps) {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetting, setResetting] = useState(false);
 
@@ -76,7 +77,8 @@ export function StudentProfile({ progress, language, onClose, userId, accessToke
       confirmReset: 'Tüm ilerlemenizi sıfırlamak istediğinizden emin misiniz?',
       resetWarning: '⚠️ Bu işlem geri alınamaz! Tüm derslerin, puanların, rozetlerin ve istatistiklerin silinecek ve baştan başlayacaksınız.',
       cancel: 'İptal',
-      reset: 'Sıfırla'
+      reset: 'Sıfırla',
+      logout: 'Çıkış Yap'
     },
     nl: {
       myProfile: 'Mijn Profiel',
@@ -98,7 +100,8 @@ export function StudentProfile({ progress, language, onClose, userId, accessToke
       confirmReset: 'Weet je zeker dat je al je voortgang wilt resetten?',
       resetWarning: '⚠️ Deze actie kan niet ongedaan worden gemaakt! Al je lessen, punten, badges en statistieken worden gewist en je begint opnieuw.',
       cancel: 'Annuleren',
-      reset: 'Reset'
+      reset: 'Reset',
+      logout: 'Uitloggen'
     }
   };
 
@@ -112,12 +115,22 @@ export function StudentProfile({ progress, language, onClose, userId, accessToke
             <h2 className="text-3xl">
               {t.myProfile}
             </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-2xl"
-            >
-              ×
-            </button>
+            <div className="flex items-center gap-3">
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  {t.logout}
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
           </div>
         </div>
 

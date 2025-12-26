@@ -66,8 +66,19 @@ export const placeholderLessons: Lesson[] = Array.from({ length: 25 }, (_, i) =>
     id: `lesson-${lessonNum}`,
     order: lessonNum,
     title: {
-      tr: `Ders ${lessonNum}: Arapça Harfler ${lessonNum}`,
-      nl: `Les ${lessonNum}: Arabische Letters ${lessonNum}`
+      // Keep a single, consistent label used everywhere (overview and in-lesson)
+      tr:
+        lessonNum === 1
+          ? 'Ders 1: Arap alfabesi'
+          : lessonNum === 2
+          ? 'Ders 2: alfabe farklı sırada'
+          : `Ders ${lessonNum}: Arapça harfler`,
+      nl:
+        lessonNum === 1
+          ? 'Les 1: Arabisch alfabet'
+          : lessonNum === 2
+          ? 'Les 2: alfabet in andere volgorde'
+          : `Les ${lessonNum}: Arabische letters`
     },
     skills: [
       `letter-recognition-${lessonNum}`,

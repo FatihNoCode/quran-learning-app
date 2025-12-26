@@ -56,7 +56,13 @@ export function QuizComponent({
   useEffect(() => {
     setSelectedAnswer(initialChoice);
     setSubmitted(answerResult !== null);
-    setAttempts(initialChoice !== null ? 1 : 0);
+    if (answerResult === false) {
+      setAttempts(maxAttempts);
+    } else if (initialChoice !== null) {
+      setAttempts(1);
+    } else {
+      setAttempts(0);
+    }
     setTimeLeft(null);
     clearTimers();
   }, [quiz.id, initialChoice, answerResult]);
@@ -173,6 +179,7 @@ export function QuizComponent({
     quiz.type === 'audio-mc' || quiz.type === 'timed-audio-mc' || quiz.type === 'error-detection';
   const maxAttempts = 2;
   const correctIndex = quiz.correctAnswer ?? null;
+  const getQuestionAudio = () => quiz.audioId || quiz.audioUrl || quiz.promptAudioId;
 
   const markAnswered = (isCorrectSelection: boolean, choice: number | null, attemptNumber: number) => {
     setSubmitted(true);
@@ -203,6 +210,8 @@ export function QuizComponent({
         setTimeout(() => {
           setSubmitted(false);
           setSelectedAnswer(null);
+          const clip = getQuestionAudio();
+          if (clip) playAudioClip(clip);
         }, 1500);
       }
     }
@@ -228,6 +237,8 @@ export function QuizComponent({
       setTimeout(() => {
         setSubmitted(false);
         setSelectedAnswer(null);
+        const clip = getQuestionAudio();
+        if (clip) playAudioClip(clip);
       }, 1500);
     }
   };
@@ -369,7 +380,7 @@ export function QuizComponent({
             const optionText = option[language];
             const isUserChoice = selectedAnswer === optionIndex;
             const isCorrectChoice = correctIndex === optionIndex;
-            const shouldShowCorrect = showFeedback && !finalResult && isCorrectChoice;
+            const shouldShowCorrect = revealCorrect && isCorrectChoice;
             
             return (
               <button
