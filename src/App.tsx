@@ -112,26 +112,35 @@ function App() {
     setLanguage: handleLanguageChange
   };
 
+  const lightBg = '#e6f4ff';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100">
+    <div className="min-h-screen" style={{ backgroundColor: lightBg }}>
       {/* Header */}
       <header className="bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between relative">
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-purple-500 to-pink-500 p-3 rounded-xl">
-              {user.role === 'student' ? (
-                <BookOpen className="text-white" size={28} />
-              ) : (
-                <Users className="text-white" size={28} />
-              )}
-            </div>
-            <div>
-              <h1 className="text-purple-800">
-                {language === 'tr' ? 'Arapça Okuma Öğreniyorum' : 'Arabisch Lezen Leren'}
-              </h1>
-              <p className="text-sm text-gray-600">
-                {language === 'tr' ? `Hoş geldin, ${user.name}!` : `Welkom, ${user.name}!`}
-              </p>
+            <div className="flex bg-white border-2 border-purple-300 rounded-full overflow-hidden shadow-sm">
+              <button
+                onClick={() => handleLanguageChange('tr')}
+                className={`px-4 py-2 transition-all ${
+                  language === 'tr'
+                    ? 'bg-purple-500 text-white shadow-inner'
+                    : 'text-purple-600 hover:bg-purple-50'
+                }`}
+              >
+                TR
+              </button>
+              <button
+                onClick={() => handleLanguageChange('nl')}
+                className={`px-4 py-2 transition-all ${
+                  language === 'nl'
+                    ? 'bg-purple-500 text-white shadow-inner'
+                    : 'text-purple-600 hover:bg-purple-50'
+                }`}
+              >
+                NL
+              </button>
             </div>
           </div>
 
@@ -151,30 +160,6 @@ function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Language Toggle */}
-            <div className="flex bg-white border-2 border-purple-300 rounded-lg overflow-hidden">
-              <button
-                onClick={() => handleLanguageChange('tr')}
-                className={`px-4 py-2 transition-colors ${
-                  language === 'tr'
-                    ? 'bg-purple-500 text-white'
-                    : 'text-purple-600 hover:bg-purple-50'
-                }`}
-              >
-                TR
-              </button>
-              <button
-                onClick={() => handleLanguageChange('nl')}
-                className={`px-4 py-2 transition-colors ${
-                  language === 'nl'
-                    ? 'bg-purple-500 text-white'
-                    : 'text-purple-600 hover:bg-purple-50'
-                }`}
-              >
-                NL
-              </button>
-            </div>
-
             {/* Logout Button */}
             <button
               onClick={handleLogout}

@@ -17,8 +17,18 @@ export function filterValidQuizzes(quizzes: Quiz[]): Quiz[] {
       return false;
     }
 
-    // For multiple-choice, listen-choose, and true-false: check options
-    if (quiz.type === 'multiple-choice' || quiz.type === 'listen-choose' || quiz.type === 'true-false') {
+    const optionBasedTypes = [
+      'multiple-choice',
+      'listen-choose',
+      'true-false',
+      'audio-mc',
+      'timed-audio-mc',
+      'error-detection',
+      'production'
+    ] as const;
+
+    // For multiple-choice style quizzes: check options
+    if (optionBasedTypes.includes(quiz.type as any)) {
       if (!quiz.options || quiz.options.length === 0) {
         return false;
       }
@@ -32,8 +42,12 @@ export function filterValidQuizzes(quizzes: Quiz[]): Quiz[] {
         return false;
       }
       
-      // Check if correctAnswer is valid
-      if (quiz.correctAnswer === undefined || quiz.correctAnswer === null || quiz.correctAnswer >= quiz.options.length) {
+      // For practice/production questions, correct answer can be omitted
+      const requiresCorrectAnswer = quiz.type !== 'production';
+      if (
+        requiresCorrectAnswer &&
+        (quiz.correctAnswer === undefined || quiz.correctAnswer === null || quiz.correctAnswer >= quiz.options.length)
+      ) {
         return false;
       }
     }

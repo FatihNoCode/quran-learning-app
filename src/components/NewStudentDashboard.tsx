@@ -348,16 +348,24 @@ export default function NewStudentDashboard({ context, onViewChange }: NewStuden
         </Card>
       </div>
 
-      {/* Overall Progress */}
-      <Card className="p-6">
-        <h3 className="text-xl mb-4">
+{/* Overall Progress */}
+      <Card className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border p-6">
+        <h3 className="text-xl">
           {language === 'tr' ? 'Genel İlerleme' : 'Totale Voortgang'}
         </h3>
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between text-sm">
           <span>{completedLessons} / {totalLessons} {language === 'tr' ? 'ders tamamlandı' : 'lessen voltooid'}</span>
           <span>{Math.round(progressPercentage)}%</span>
         </div>
-        <Progress value={progressPercentage} className="h-4" />
+        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+          <div
+            className="h-3 rounded-full transition-all duration-500"
+            style={{
+              width: `${progressPercentage}%`,
+              background: 'linear-gradient(90deg, #a855f7, #ec4899, #f59e0b, #10b981)'
+            }}
+          />
+        </div>
       </Card>
 
       {/* Action Buttons */}

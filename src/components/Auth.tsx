@@ -196,7 +196,7 @@ export default function Auth({ onLogin, language, onLanguageChange }: AuthProps)
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-100 to-blue-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-purple-100 flex items-center justify-center p-4">
       {/* Language Toggle - Top Right */}
       <div className="absolute top-4 right-4">
         <div className="flex bg-white border-2 border-purple-300 rounded-lg overflow-hidden shadow-lg">

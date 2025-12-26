@@ -2945,3 +2945,15 @@ html {
     transform: none;
   }
 }
+.arabic-letter-box {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+}
+
+.arabic-text {
+  line-height: 1;
+  transform: translateY(0.06em);
+  font-family: 'Noto Naskh Arabic', 'Amiri', serif;
+}

@@ -148,28 +148,7 @@ export function LessonActivity({ lesson, language, progress, onComplete }: Lesso
           </div>
         </Card>
 
-        {/* Skills Preview */}
-        <Card className="p-6">
-          <h3 className="text-xl mb-4 flex items-center gap-2">
-            <Brain className="text-purple-500" size={24} />
-            {language === 'tr' ? 'Bu derste öğrenecekleriniz' : 'Wat je gaat leren'}
-          </h3>
-          <div className="grid md:grid-cols-3 gap-4">
-            {lesson.skills.map((skill, index) => (
-              <div
-                key={skill}
-                className="p-4 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl text-center"
-              >
-                <div className="text-3xl mb-2">
-                  {['📖', '🎯', '✍️'][index % 3]}
-                </div>
-                <div className="text-sm text-purple-700">
-                  {language === 'tr' ? `Beceri ${index + 1}` : `Vaardigheid ${index + 1}`}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
+        
       </div>
     );
   }

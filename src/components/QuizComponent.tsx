@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Quiz } from '../data/notionLessons';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -9,21 +9,122 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 interface QuizComponentProps {
   quiz: Quiz;
   language: 'tr' | 'nl';
-  onAnswer: (isCorrect: boolean) => void;
+  onAnswer: (isCorrect: boolean, selectedIndex?: number | null) => void;
   isAnswered?: boolean; // Whether this question was already answered
+  initialChoice?: number | null; // Persisted answer index
+  answerResult?: boolean | null; // Persisted correctness
 }
 
-export function QuizComponent({ quiz, language, onAnswer, isAnswered = false }: QuizComponentProps) {
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [attempts, setAttempts] = useState(0);
+export function QuizComponent({
+  quiz,
+  language,
+  onAnswer,
+  isAnswered = false,
+  initialChoice = null,
+  answerResult = null
+}: QuizComponentProps) {
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(initialChoice);
+  const [submitted, setSubmitted] = useState<boolean>(answerResult !== null);
+  const [attempts, setAttempts] = useState(initialChoice !== null ? 1 : 0);
+  const [optionOrder, setOptionOrder] = useState<number[]>([]);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearTimers = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  const shuffleArray = (arr: number[]) => {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  };
   
   // Reset state when quiz changes (new question)
   useEffect(() => {
-    setSelectedAnswer(null);
-    setSubmitted(false);
-    setAttempts(0);
+    setSelectedAnswer(initialChoice);
+    setSubmitted(answerResult !== null);
+    setAttempts(initialChoice !== null ? 1 : 0);
+    setTimeLeft(null);
+    clearTimers();
+  }, [quiz.id, initialChoice, answerResult]);
+
+  // Shuffle option order when needed
+  useEffect(() => {
+    if (!quiz.options) {
+      setOptionOrder([]);
+      return;
+    }
+    const indices = quiz.options.map((_, idx) => idx);
+    const shouldShuffle =
+      quiz.shuffleOptions ??
+      ['audio-mc', 'timed-audio-mc', 'error-detection'].includes(quiz.type as any);
+    setOptionOrder(shouldShuffle ? shuffleArray(indices) : indices);
+  }, [quiz.id, quiz.options, quiz.shuffleOptions, quiz.type]);
+
+  // Timer handling disabled (no countdowns)
+  useEffect(() => {
+    clearTimers();
+    setTimeLeft(null);
+    return () => clearTimers();
   }, [quiz.id]);
+
+  const playAudioClip = (clipId?: string) => {
+    if (!clipId) return;
+
+    const trimmed = clipId.trim();
+    const hasExtension = trimmed.includes('.') || trimmed.includes('/');
+    const candidates = hasExtension
+      ? [trimmed]
+      : [`/audio/${encodeURIComponent(trimmed)}.mp3`, `/Audio/${encodeURIComponent(trimmed)}.mp3`];
+
+    const tryPlay = (index: number) => {
+      if (index >= candidates.length) return;
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+
+      const audio = new Audio(candidates[index]);
+      audioRef.current = audio;
+      audio.onerror = () => tryPlay(index + 1);
+      audio.play().catch(() => {});
+    };
+
+    tryPlay(0);
+  };
+
+  // Auto-play audio once when question loads for audio-based items
+  useEffect(() => {
+    if (
+      ['audio-mc', 'timed-audio-mc', 'error-detection', 'production'].includes(quiz.type) &&
+      quiz.audioId
+    ) {
+      playAudioClip(quiz.audioId);
+    } else if (quiz.type === 'listen-choose' && quiz.audioUrl) {
+      playAudioClip(quiz.audioUrl);
+    }
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    };
+  }, [quiz.id, quiz.audioId, quiz.audioUrl, quiz.type]);
   
   // Helper function to render text with Arabic parts styled separately
   const renderTextWithArabic = (text: string) => {
@@ -57,7 +158,9 @@ export function QuizComponent({ quiz, language, onAnswer, isAnswered = false }: 
       <>
         {parts.map((part, idx) => 
           part.isArabic ? (
-            <span key={idx} className="arabic-text text-3xl mx-1">{part.text}</span>
+            <span key={idx} className="arabic-letter-box">
+              <span className="arabic-text text-3xl">{part.text}</span>
+            </span>
           ) : (
             <span key={idx}>{part.text}</span>
           )
@@ -66,35 +169,37 @@ export function QuizComponent({ quiz, language, onAnswer, isAnswered = false }: 
     );
   };
   
-  const handleSelect = (answer: number) => {
-    if (!submitted && !isAnswered) {
-      setSelectedAnswer(answer);
+  const autoSubmit =
+    quiz.type === 'audio-mc' || quiz.type === 'timed-audio-mc' || quiz.type === 'error-detection';
+  const maxAttempts = 2;
+  const correctIndex = quiz.correctAnswer ?? null;
+
+  const markAnswered = (isCorrectSelection: boolean, choice: number | null, attemptNumber: number) => {
+    setSubmitted(true);
+    clearTimers();
+    if (isCorrectSelection && attemptNumber === 1) {
+      setTimeout(() => onAnswer(isCorrectSelection, choice), 2000);
+    } else {
+      onAnswer(isCorrectSelection, choice);
     }
   };
-  
-  const handleSubmit = () => {
-    if (selectedAnswer === null || isAnswered) return;
-    
-    setSubmitted(true);
-    const isCorrect = selectedAnswer === quiz.correctAnswer;
-    
-    if (isCorrect) {
-      // Correct answer - move to next question after delay
-      setTimeout(() => {
-        onAnswer(true);
-      }, 1500);
-    } else {
-      // Wrong answer - check attempts
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
-      
-      if (newAttempts >= 2) {
-        // Second attempt failed - move to next question
-        setTimeout(() => {
-          onAnswer(false);
-        }, 1500);
+
+  const handleSelect = (answer: number) => {
+    if (isAnswered) return;
+
+    setSelectedAnswer(answer);
+
+    if (autoSubmit) {
+      const nextAttempts = attempts + 1;
+      setAttempts(nextAttempts);
+      const isCorrectSelection = correctIndex !== null ? answer === correctIndex : false;
+
+      if (isCorrectSelection) {
+        markAnswered(true, answer, nextAttempts);
+      } else if (nextAttempts >= maxAttempts) {
+        markAnswered(false, answer, nextAttempts);
       } else {
-        // First attempt failed - allow retry
+        setSubmitted(true);
         setTimeout(() => {
           setSubmitted(false);
           setSelectedAnswer(null);
@@ -103,10 +208,97 @@ export function QuizComponent({ quiz, language, onAnswer, isAnswered = false }: 
     }
   };
   
+  const handleSubmit = () => {
+    if (selectedAnswer === null || isAnswered) return;
+    
+    clearTimers();
+    
+    const nextAttempts = attempts + 1;
+    setAttempts(nextAttempts);
+    const isCorrect = correctIndex !== null ? selectedAnswer === correctIndex : false;
+    setSubmitted(true);
+    
+    if (isCorrect || nextAttempts >= maxAttempts) {
+      if (isCorrect && nextAttempts === 1) {
+        setTimeout(() => onAnswer(isCorrect, selectedAnswer), 2000);
+      } else {
+        onAnswer(isCorrect, selectedAnswer);
+      }
+    } else {
+      setTimeout(() => {
+        setSubmitted(false);
+        setSelectedAnswer(null);
+      }, 1500);
+    }
+  };
+  
   const isCorrect = submitted && selectedAnswer === quiz.correctAnswer;
-  const isIncorrect = submitted && selectedAnswer !== quiz.correctAnswer;
+  const optionsDisabled = isAnswered || (submitted && attempts >= maxAttempts);
 
-  if (quiz.type === 'multiple-choice' || quiz.type === 'listen-choose' || quiz.type === 'true-false') {
+  if (quiz.type === 'production') {
+    return (
+      <div className="space-y-6 text-center">
+        <h3 className="text-2xl mb-2 flex items-center justify-center gap-2">
+          {renderTextWithArabic(quiz.question[language])}
+        </h3>
+        {quiz.promptLetter && (
+          <div className="flex justify-center">
+            <div className="arabic-letter-box border-2 border-purple-200 rounded-xl shadow-sm bg-purple-50">
+              <span className="arabic-text text-6xl inline-block">{quiz.promptLetter}</span>
+            </div>
+          </div>
+        )}
+        <div className="flex justify-center gap-3">
+          <Button
+            onClick={() => playAudioClip(quiz.audioId || quiz.audioUrl)}
+            className="bg-purple-500 hover:bg-purple-600"
+          >
+            <Volume2 className="mr-2" size={20} />
+            {language === 'tr' ? 'Tekrar dinle' : 'Opnieuw afspelen'}
+          </Button>
+          <Button
+            onClick={() => {
+              if (!submitted && !isAnswered) {
+                setSubmitted(true);
+                onAnswer(true);
+              }
+            }}
+            disabled={submitted || isAnswered}
+            className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60"
+          >
+            {language === 'tr' ? 'Volgende' : 'Volgende'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    quiz.type === 'multiple-choice' ||
+    quiz.type === 'listen-choose' ||
+    quiz.type === 'true-false' ||
+    quiz.type === 'audio-mc' ||
+    quiz.type === 'timed-audio-mc' ||
+    quiz.type === 'error-detection'
+  ) {
+    const orderedOptions =
+      optionOrder.length && quiz.options
+        ? optionOrder
+        : quiz.options?.map((_, idx) => idx) ?? [];
+    const promptAudio = quiz.promptAudioId || quiz.audioId || quiz.audioUrl;
+    const hasAudioButton = Boolean(quiz.audioId || quiz.audioUrl);
+    const showTimer = false;
+    const finalResult =
+      answerResult !== null ? answerResult : submitted ? isCorrect : null;
+    const showFeedback = finalResult !== null && selectedAnswer !== null;
+    const revealCorrect =
+      showFeedback && !finalResult && attempts >= maxAttempts && correctIndex !== null && selectedAnswer !== correctIndex;
+    const canSubmit = !autoSubmit && !isAnswered && selectedAnswer !== null && attempts < maxAttempts;
+    const timePercent =
+      showTimer && timeLeft !== null && quiz.timeLimitSeconds
+        ? Math.max(0, Math.min(100, (timeLeft / quiz.timeLimitSeconds) * 100))
+        : 100;
+
     return (
       <div className="space-y-6">
         {/* Question */}
@@ -114,38 +306,86 @@ export function QuizComponent({ quiz, language, onAnswer, isAnswered = false }: 
           <h3 className="text-2xl mb-4 flex items-center justify-center gap-2">
             {renderTextWithArabic(quiz.question[language])}
           </h3>
-          {quiz.type === 'listen-choose' && quiz.audioUrl && (
-            <Button
-              onClick={() => {
-                // Play audio (placeholder - would need actual audio implementation)
-                console.log('Playing audio:', quiz.audioUrl);
-              }}
-              className="mx-auto mb-4 bg-purple-500 hover:bg-purple-600"
-            >
-              <Volume2 className="mr-2" size={20} />
-              {language === 'tr' ? 'Dinle' : 'Luister'}
-            </Button>
+          {quiz.promptWord && (
+            <div className="flex justify-center mb-3">
+              <div className="inline-flex flex-wrap items-center justify-center gap-3 text-lg bg-purple-50 border border-purple-200 rounded-xl px-3 py-2 shadow-sm">
+                <span className="font-semibold text-gray-800">{quiz.promptWord}</span>
+                {quiz.promptMeaning && (
+                  <span className="text-sm text-gray-700 bg-white rounded-lg px-3 py-1 shadow-inner">
+                    {quiz.promptMeaning[language]}
+                  </span>
+                )}
+                {promptAudio && !hasAudioButton && (
+                  <Button
+                    size="sm"
+                    onClick={() => playAudioClip(promptAudio)}
+                    className="bg-purple-500 hover:bg-purple-600 px-3"
+                  >
+                    <Volume2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+          {hasAudioButton && (
+            <div className="flex justify-center">
+              <Button
+                onClick={() => playAudioClip(quiz.audioId || quiz.audioUrl)}
+                className="mb-4 bg-purple-500 hover:bg-purple-600"
+              >
+                <Volume2 className="mr-2" size={20} />
+                {language === 'tr' ? 'Dinle' : 'Luister'}
+              </Button>
+            </div>
+          )}
+          {quiz.promptLetter && (
+            <div className="mt-2 flex justify-center">
+              <div className="arabic-letter-box">
+                <span className="arabic-text text-6xl">{quiz.promptLetter}</span>
+              </div>
+            </div>
+          )}
+          {showTimer && quiz.timeLimitSeconds && (
+            <div className="mt-4 max-w-md mx-auto">
+              <div className="flex justify-between text-sm text-gray-600 mb-1">
+                <span>{language === 'tr' ? 'Süre' : 'Timer'}</span>
+                <span>{timeLeft ?? quiz.timeLimitSeconds}s</span>
+              </div>
+              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-2 rounded-full bg-purple-500 transition-all duration-300"
+                  style={{ width: `${timePercent}%` }}
+                />
+              </div>
+            </div>
           )}
         </div>
 
         {/* Options */}
         <div className="grid gap-3 max-w-2xl mx-auto">
-          {quiz.options?.map((option, index) => {
+          {orderedOptions.map(optionIndex => {
+            const option = quiz.options?.[optionIndex];
+            if (!option) return null;
             const optionText = option[language];
+            const isUserChoice = selectedAnswer === optionIndex;
+            const isCorrectChoice = correctIndex === optionIndex;
+            const shouldShowCorrect = showFeedback && !finalResult && isCorrectChoice;
             
             return (
               <button
-                key={index}
-                onClick={() => !submitted && !isAnswered && handleSelect(index)}
-                disabled={submitted || isAnswered}
-                className={`p-4 rounded-xl border-2 transition-all text-left ${
-                  submitted || isAnswered
-                    ? index === selectedAnswer
-                      ? isCorrect
+                key={optionIndex}
+                onClick={() => handleSelect(optionIndex)}
+                disabled={optionsDisabled}
+                className={`p-2 rounded-xl border-2 transition-all text-left shadow-sm ${
+                  showFeedback
+                    ? isUserChoice
+                      ? finalResult
                         ? 'bg-green-100 border-green-500'
                         : 'bg-red-100 border-red-500'
+                      : shouldShowCorrect
+                      ? 'bg-green-50 border-green-500'
                       : 'bg-gray-100 border-gray-300'
-                    : selectedAnswer === index
+                    : isUserChoice
                     ? 'bg-purple-100 border-purple-500'
                     : 'bg-white border-gray-300 hover:border-purple-400 hover:bg-purple-50'
                 }`}
@@ -154,12 +394,15 @@ export function QuizComponent({ quiz, language, onAnswer, isAnswered = false }: 
                   <span className="text-lg flex items-center gap-2">
                     {renderTextWithArabic(optionText)}
                   </span>
-                  {(submitted || isAnswered) && index === selectedAnswer && (
-                    isCorrect ? (
+                  {showFeedback && isUserChoice && (
+                    finalResult ? (
                       <Check className="text-green-600" size={24} />
                     ) : (
                       <X className="text-red-600" size={24} />
                     )
+                  )}
+                  {shouldShowCorrect && !isUserChoice && (
+                    <Check className="text-green-600" size={20} />
                   )}
                 </div>
               </button>
@@ -168,27 +411,39 @@ export function QuizComponent({ quiz, language, onAnswer, isAnswered = false }: 
         </div>
 
         {/* Submit Button */}
-        {!submitted && !isAnswered && selectedAnswer !== null && (
+        {canSubmit && (
           <div className="text-center">
             <Button
               onClick={handleSubmit}
               disabled={isAnswered}
               className="bg-purple-500 hover:bg-purple-600 px-8 py-3"
             >
-              {language === 'tr' ? 'Cevabı Kontrol Et' : 'Controleer Antwoord'}
+              {language === 'tr' ? 'Cevabını Kontrol Et' : 'Controleer Antwoord'}
             </Button>
           </div>
         )}
 
         {/* Feedback */}
-        {submitted && (
+        {showFeedback && (
           <div className={`text-center p-4 rounded-xl ${
-            isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            finalResult ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
           }`}>
-            {isCorrect 
-              ? (language === 'tr' ? '✓ Doğru!' : '✓ Correct!')
-              : (language === 'tr' ? '✗ Yanlış. Tekrar dene!' : '✗ Verkeerd. Probeer opnieuw!')
+            {finalResult 
+              ? (language === 'tr' ? 'Doğru!' : 'Correct!')
+              : (quiz.type === 'timed-audio-mc' && selectedAnswer === null)
+                ? (language === 'tr' ? 'Süre doldu.' : 'Tijd is op.')
+                : attempts < maxAttempts
+                  ? (language === 'tr' ? 'Yanlış. Tekrar dene!' : 'Verkeerd. Probeer opnieuw!')
+                  : (language === 'tr' ? 'Yanlış. Doğru cevabı incele!' : 'Verkeerd. Bekijk het juiste antwoord!')
             }
+          </div>
+        )}
+        {revealCorrect && correctIndex !== null && quiz.options?.[correctIndex] && (
+          <div className="text-center text-sm text-gray-700">
+            {language === 'tr' ? 'Doğru cevap:' : 'Juiste antwoord:'}{' '}
+            <span className="font-semibold arabic-text text-xl">
+              {quiz.options[correctIndex][language]}
+            </span>
           </div>
         )}
       </div>
@@ -213,11 +468,15 @@ function DragDropQuiz({ quiz, language, onAnswer }: QuizComponentProps) {
   
   // Shuffle sources on mount so they're not in the same order as answers
   const [shuffledSources] = useState(() => {
-    const sources = quiz.items?.filter(item => item.id.startsWith('letter-')) || [];
+    const sources = quiz.items?.filter(
+      item => item.id.startsWith('word-')
+    ) || [];
     return [...sources].sort(() => Math.random() - 0.5);
   });
 
-  const targets = quiz.items?.filter(item => item.id.startsWith('sound-')) || [];
+  const targets = quiz.items?.filter(
+    item => item.id.startsWith('letter-')
+  ) || [];
 
   const handleDrop = (sourceId: string, targetId: string) => {
     setPairs(currentPairs => {
@@ -340,7 +599,7 @@ function DraggableItem({
   return (
     <div
       ref={drag}
-      className={`p-4 border-2 rounded-xl transition-all ${
+              className={`p-4 border-2 rounded-xl transition-all shadow-sm ${
         submitted
           ? 'bg-gray-100 border-gray-300 cursor-not-allowed'
           : isDragging
@@ -348,8 +607,20 @@ function DraggableItem({
           : 'bg-white border-purple-300 cursor-grab hover:border-purple-500 hover:bg-purple-50'
       } ${isPaired && !submitted ? 'border-purple-500 bg-purple-100' : ''}`}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span className="text-lg">{item.content[language]}</span>
+        {item.audioId && !submitted && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              const audio = new Audio(`/Audio/${encodeURIComponent(item.audioId)}.mp3`);
+              audio.play().catch(() => {});
+            }}
+          >
+            <Volume2 className="w-4 h-4" />
+          </Button>
+        )}
         {isPaired && !submitted && <span className="text-purple-600">✓</span>}
       </div>
     </div>
@@ -390,7 +661,7 @@ function DropTarget({
   return (
     <div
       ref={drop}
-      className={`p-4 border-2 rounded-xl min-h-[100px] transition-all ${
+      className={`p-4 border-2 rounded-xl min-h-[100px] transition-all shadow-sm ${
         isOver && !submitted
           ? 'border-purple-500 bg-purple-100 scale-105'
           : submitted
@@ -404,7 +675,9 @@ function DropTarget({
           : 'border-dashed border-gray-400 bg-gray-50'
       }`}
     >
-      <div className="text-sm font-semibold mb-2 text-purple-700">{target.content[language]}</div>
+      <div className="text-sm font-semibold mb-2 text-purple-700 arabic-text text-xl">
+        {target.content[language]}
+      </div>
       {matched && matchedSource && (
         <div className={`mt-2 p-3 rounded-lg ${
           submitted
