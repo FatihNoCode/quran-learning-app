@@ -176,7 +176,10 @@ export function QuizComponent({
   };
   
   const autoSubmit =
-    quiz.type === 'audio-mc' || quiz.type === 'timed-audio-mc' || quiz.type === 'error-detection';
+    (quiz.bundleId?.startsWith('lesson-3')) ||
+    quiz.type === 'audio-mc' ||
+    quiz.type === 'timed-audio-mc' ||
+    quiz.type === 'error-detection';
   const maxAttempts = 2;
   const correctIndex = quiz.correctAnswer ?? null;
   const getQuestionAudio = () => quiz.audioId || quiz.audioUrl || quiz.promptAudioId;

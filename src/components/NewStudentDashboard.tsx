@@ -264,19 +264,13 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
 
   // Lessons overview
   if (currentView === 'lessons') {
-    const alphabetLesson = getLessonByOrder(1);
-    const lessonCards = [
-      ...(alphabetLesson
-        ? [{
-            id: alphabetLesson.id,
-            order: alphabetLesson.order,
-            title: alphabetLesson.content.titleTranslations
-          }]
-        : []),
-      ...placeholderLessons
-        .filter(l => !(alphabetLesson && l.order === alphabetLesson.order))
-        .map(l => ({ id: l.id, order: l.order, title: l.title }))
-    ].sort((a, b) => a.order - b.order);
+    const lessonCards = notionLessons
+      .map(l => ({
+        id: l.id,
+        order: l.order,
+        title: l.content.titleTranslations
+      }))
+      .sort((a, b) => a.order - b.order);
 
     return (
       <div className="max-w-6xl mx-auto space-y-6">
@@ -379,7 +373,7 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
   if (currentView === 'lesson') {
     const targetLessonOrder = Math.max(
       1,
-      selectedLessonOrder ?? Math.min(progress.currentLessonOrder, placeholderLessons.length)
+      selectedLessonOrder ?? Math.min(progress.currentLessonOrder, notionLessons.length)
     );
     const goBackTo: ActivityView = selectedLessonOrder ? 'lessons' : 'dashboard';
 
@@ -458,25 +452,13 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
 
   // Show trivia
   if (currentView === 'trivia') {
-    return (
-      <div className="space-y-4">
-        <div className="max-w-6xl mx-auto">
-          <button
-            onClick={() => setCurrentView('dashboard')}
-            className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700"
-          >
-            {language === 'tr' ? 'Geri Dön' : 'Terug'}
-          </button>
-        </div>
-        <IslamicTrivia language={language} />
-      </div>
-    );
+    return <IslamicTrivia language={language} onBack={() => setCurrentView('dashboard')} />;
   }
 
   // Dashboard view
   // Get the current lesson title consistently from lesson data
   let currentLessonTitle = '';
-  const lessonOrderForTitle = Math.max(1, Math.min(progress.currentLessonOrder, placeholderLessons.length));
+  const lessonOrderForTitle = Math.max(1, Math.min(progress.currentLessonOrder, notionLessons.length));
 
   if (lessonOrderForTitle === 1) {
     const alphabetLesson = getLessonByOrder(1);
@@ -489,7 +471,7 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
   }
   
   const dueReviewItems = getDueReviewItems(progress.reviewQueue);
-  const totalLessons = placeholderLessons.length;
+  const totalLessons = notionLessons.length;
   const completedLessons = progress.completedLessons.length;
   const progressPercentage = (completedLessons / totalLessons) * 100;
 

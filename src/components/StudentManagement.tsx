@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { projectId } from '../utils/supabase/info';
-import { LESSON_LEVELS } from '../data/lessons';
+import { placeholderLessons } from '../data/placeholderLessons';
 import { Trash2, Unlock, Eye, EyeOff, AlertTriangle, RotateCcw } from 'lucide-react';
 
 interface StudentManagementProps {
@@ -13,26 +13,26 @@ interface StudentManagementProps {
 
 const translations = {
   tr: {
-    actions: 'İşlemler',
+    actions: 'ŽøYlemler',
     delete: 'Sil',
-    unlockLevel: 'Seviye Aç',
-    viewPassword: 'Şifre Göster',
-    hidePassword: 'Şifre Gizle',
-    password: 'Şifre',
-    confirmDelete: 'Bu öğrenciyi silmek istediğinizden emin misiniz?',
-    deleteWarning: 'Bu işlem geri alınamaz. Tüm ilerleme kaydı silinecektir.',
-    cancel: 'İptal',
+    unlockLevel: 'Seviye AÇõ',
+    viewPassword: 'zifre GÇôster',
+    hidePassword: 'zifre Gizle',
+    password: 'zifre',
+    confirmDelete: 'Bu ÇôŽYrenciyi silmek istediŽYinizden emin misiniz?',
+    deleteWarning: 'Bu iYlem geri alŽñnamaz. TÇ¬m ilerleme kaydŽñ silinecektir.',
+    cancel: 'Žøptal',
     confirm: 'Onayla',
-    selectLevel: 'Seviye Seç',
-    unlock: 'Aç',
+    selectLesson: 'Ders SeÇõ',
+    unlock: 'AÇõ',
     deleting: 'Siliniyor...',
-    unlocking: 'Açılıyor...',
-    username: 'Kullanıcı Adı',
-    resetProgress: 'İlerlemeyi Sıfırla',
-    confirmReset: 'Bu öğrencinin ilerlemesini sıfırlamak istediğinizden emin misiniz?',
-    resetWarning: 'Tüm tamamlanmış dersler sıfırlanacak ve öğrenci baştan başlayacak.',
-    resetting: 'Sıfırlanıyor...',
-    reset: 'Sıfırla'
+    unlocking: 'AÇõŽñlŽñyor...',
+    username: 'KullanŽñcŽñ AdŽñ',
+    resetProgress: 'Žølerlemeyi SŽñfŽñrla',
+    confirmReset: 'Bu ÇôŽYrencinin ilerlemesini sŽñfŽñrlamak istediŽYinizden emin misiniz?',
+    resetWarning: 'TÇ¬m tamamlanmŽñY dersler sŽñfŽñrlanacak ve ÇôŽYrenci baYtan baYlayacak.',
+    resetting: 'SŽñfŽñrlanŽñyor...',
+    reset: 'SŽñfŽñrla'
   },
   nl: {
     actions: 'Acties',
@@ -45,7 +45,7 @@ const translations = {
     deleteWarning: 'Deze actie kan niet ongedaan worden gemaakt. Alle voortgang wordt gewist.',
     cancel: 'Annuleren',
     confirm: 'Bevestigen',
-    selectLevel: 'Selecteer Niveau',
+    selectLesson: 'Selecteer Les',
     unlock: 'Ontgrendelen',
     deleting: 'Verwijderen...',
     unlocking: 'Ontgrendelen...',
@@ -63,7 +63,7 @@ export default function StudentManagement({ student, accessToken, language, onUp
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUnlockDialog, setShowUnlockDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
-  const [selectedLevel, setSelectedLevel] = useState('');
+  const [selectedLessonOrder, setSelectedLessonOrder] = useState<number>(student.currentLessonOrder || 1);
   const [loading, setLoading] = useState(false);
 
   const t = translations[language];
@@ -98,8 +98,6 @@ export default function StudentManagement({ student, accessToken, language, onUp
   };
 
   const handleUnlockLevel = async () => {
-    if (!selectedLevel) return;
-
     setLoading(true);
     try {
       const response = await fetch(
@@ -110,13 +108,15 @@ export default function StudentManagement({ student, accessToken, language, onUp
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`
           },
-          body: JSON.stringify({ level: selectedLevel })
+          body: JSON.stringify({
+            lessonOrder: selectedLessonOrder
+          })
         }
       );
 
       if (response.ok) {
         setShowUnlockDialog(false);
-        setSelectedLevel('');
+        setSelectedLessonOrder(student.currentLessonOrder || 1);
         onUpdate();
       } else {
         const data = await response.json();
@@ -215,7 +215,7 @@ export default function StudentManagement({ student, accessToken, language, onUp
               <p className="text-sm text-gray-600 mb-2">{t.username}:</p>
               <p className="text-lg mb-3">{student.username}</p>
               <p className="text-sm text-gray-600 mb-2">{t.password}:</p>
-              <p className="text-lg">{student.password || '•••••••• '}</p>
+              <p className="text-lg">{student.password || 'ƒ?½ƒ?½ƒ?½ƒ?½ƒ?½ƒ?½ƒ?½ƒ?½ '}</p>
             </div>
             <button
               onClick={() => setShowPassword(false)}
@@ -232,26 +232,27 @@ export default function StudentManagement({ student, accessToken, language, onUp
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full border-4 border-green-200 shadow-2xl">
             <h3 className="text-green-800 mb-4">{student.name} - {t.unlockLevel}</h3>
-            <div className="mb-4">
-              <label className="block text-gray-700 mb-2">{t.selectLevel}</label>
-              <select
-                value={selectedLevel}
-                onChange={(e) => setSelectedLevel(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-green-200 rounded-xl focus:outline-none focus:border-green-500"
-              >
-                <option value="">-- {t.selectLevel} --</option>
-                {Object.entries(LESSON_LEVELS).map(([key, value]) => (
-                  <option key={key} value={key}>
-                    {value[language]}
-                  </option>
-                ))}
-              </select>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-gray-700 mb-2">{t.selectLesson}</label>
+                <select
+                  value={selectedLessonOrder}
+                  onChange={(e) => setSelectedLessonOrder(Number(e.target.value))}
+                  className="w-full px-4 py-3 border-2 border-green-200 rounded-xl focus:outline-none focus:border-green-500"
+                >
+                  {placeholderLessons.map((lesson) => (
+                    <option key={lesson.id} value={lesson.order}>
+                      {lesson.title[language]}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-4 mt-8">
               <button
                 onClick={() => {
                   setShowUnlockDialog(false);
-                  setSelectedLevel('');
+                  setSelectedLessonOrder(student.currentLessonOrder || 1);
                 }}
                 className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors"
                 disabled={loading}
@@ -260,7 +261,7 @@ export default function StudentManagement({ student, accessToken, language, onUp
               </button>
               <button
                 onClick={handleUnlockLevel}
-                disabled={!selectedLevel || loading}
+                disabled={loading}
                 className="flex-1 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? t.unlocking : t.unlock}

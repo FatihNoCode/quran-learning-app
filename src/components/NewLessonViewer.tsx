@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+﻿import { useState, useMemo, useRef, useEffect } from 'react';
 import { Lesson, Quiz } from '../data/notionLessons';
 import { CheckCircle, ArrowRight, ArrowLeft, Sparkles, BookOpen, Volume2 } from 'lucide-react';
 import { QuizComponent } from './QuizComponent';
@@ -38,7 +38,7 @@ const translations = {
     wordStartsWith: 'Harfle başlayan kelime',
     letterName: 'Harf ismi',
     letterPronunciationLabel: 'Harf telaffuzu',
-    wordMeaning: 'Anlamı',
+    wordMeaning: 'AnlamÄ±',
     typeInfo: 'Harf tipi'
   },
   nl: {
@@ -76,7 +76,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
   const [completed, setCompleted] = useState(false);
   const [showParts, setShowParts] = useState(false);
   const [phase, setPhase] = useState<'study' | 'quiz' | 'complete'>('study');
-  const [showIntro, setShowIntro] = useState(lesson.order === 1);
+  const [showIntro, setShowIntro] = useState(true);
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
   const [currentBundleIndex, setCurrentBundleIndex] = useState(0);
   type AnswerRecord = { result: boolean | null; choice: number | null };
@@ -117,6 +117,80 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
   const localizedTitle = lesson.content.titleTranslations
     ? lesson.content.titleTranslations[language] ?? lesson.content.title
     : lesson.content.title;
+  const baseArabicOrder = [
+    'ا','ب','ت','ث','ج','ح','خ','د','ذ','ر','ز','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ك','ل','م','ن','ه','و','ي'
+  ];
+  const letterAudioByOrder = [
+    'alif',
+    'ba',
+    'ta (neutral)',
+    'tha',
+    'jim',
+    'ha early',
+    'kha',
+    'dal',
+    'dhal',
+    'ra',
+    'ze',
+    'sin',
+    'shin',
+    'sad',
+    'dad',
+    'ta (heavy)',
+    'za',
+    'ayn',
+    'ghayn',
+    'fa',
+    'qaf',
+    'kaf',
+    'lam',
+    'mim',
+    'nun',
+    'ha later',
+    'waw',
+    'ya'
+  ];
+  const lesson3Forms = [
+    { end: 'ـا', middle: 'ـا', beginning: 'ا', isolated: 'ا' },
+    { end: 'ـب', middle: 'ـبـ', beginning: 'بـ', isolated: 'ب' },
+    { end: 'ـت', middle: 'ـتـ', beginning: 'تـ', isolated: 'ت' },
+    { end: 'ـث', middle: 'ـثـ', beginning: 'ثـ', isolated: 'ث' },
+    { end: 'ـج', middle: 'ـجـ', beginning: 'جـ', isolated: 'ج' },
+    { end: 'ـح', middle: 'ـحـ', beginning: 'حـ', isolated: 'ح' },
+    { end: 'ـخ', middle: 'ـخـ', beginning: 'خـ', isolated: 'خ' },
+    { end: 'ـد', middle: 'ـد', beginning: 'د', isolated: 'د' },
+    { end: 'ـذ', middle: 'ـذ', beginning: 'ذ', isolated: 'ذ' },
+    { end: 'ـر', middle: 'ـر', beginning: 'ر', isolated: 'ر' },
+    { end: 'ـز', middle: 'ـز', beginning: 'ز', isolated: 'ز' },
+    { end: 'ـس', middle: 'ـسـ', beginning: 'سـ', isolated: 'س' },
+    { end: 'ـش', middle: 'ـشـ', beginning: 'شـ', isolated: 'ش' },
+    { end: 'ـص', middle: 'ـصـ', beginning: 'صـ', isolated: 'ص' },
+    { end: 'ـض', middle: 'ـضـ', beginning: 'ضـ', isolated: 'ض' },
+    { end: 'ـط', middle: 'ـطـ', beginning: 'طـ', isolated: 'ط' },
+    { end: 'ـظ', middle: 'ـظـ', beginning: 'ظـ', isolated: 'ظ' },
+    { end: 'ـع', middle: 'ـعـ', beginning: 'عـ', isolated: 'ع' },
+    { end: 'ـغ', middle: 'ـغـ', beginning: 'غـ', isolated: 'غ' },
+    { end: 'ـف', middle: 'ـفـ', beginning: 'فـ', isolated: 'ف' },
+    { end: 'ـق', middle: 'ـقـ', beginning: 'قـ', isolated: 'ق' },
+    { end: 'ـك', middle: 'ـكـ', beginning: 'كـ', isolated: 'ك' },
+    { end: 'ـل', middle: 'ـلـ', beginning: 'لـ', isolated: 'ل' },
+    { end: 'ـم', middle: 'ـمـ', beginning: 'مـ', isolated: 'م' },
+    { end: 'ـن', middle: 'ـنـ', beginning: 'نـ', isolated: 'ن' },
+    { end: 'ـه', middle: 'ـهـ', beginning: 'هـ', isolated: 'ه' },
+    { end: 'ـو', middle: 'ـو', beginning: 'و', isolated: 'و' },
+    { end: 'ـي', middle: 'ـيـ', beginning: 'يـ', isolated: 'ي' }
+  ];
+  const getLetterAudioId = (arabicChar?: string) => {
+    if (!arabicChar) return undefined;
+    const trimmed = arabicChar.trim();
+    const idx = baseArabicOrder.indexOf(trimmed);
+    if (idx >= 0) return letterAudioByOrder[idx];
+    const formIdx = lesson3Forms.findIndex(form =>
+      [form.isolated, form.beginning, form.middle, form.end].includes(trimmed)
+    );
+    if (formIdx >= 0) return letterAudioByOrder[formIdx];
+    return undefined;
+  };
   
   // Filter valid quizzes (remove order-sequence and empty quizzes) and group into bundles
   const filteredQuizzes = useMemo(() => {
@@ -127,6 +201,10 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
     () => (language === 'tr' ? `Ders ${lesson.order}` : `Les ${lesson.order}`),
     [language, lesson.order]
   );
+
+  useEffect(() => {
+    setShowIntro(true);
+  }, [lesson.order]);
 
   const quizBundles = useMemo(() => {
     if (!filteredQuizzes.length) return [];
@@ -301,6 +379,15 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
       return (
         <div className="min-h-screen p-3" style={{ backgroundColor: '#e6f4ff' }}>
           <div className="max-w-4xl mx-auto">
+            <div className="mb-3">
+              <button
+                onClick={onBack}
+                className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 border border-purple-200 rounded-full px-3 py-1 shadow-sm bg-white transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                {t.back}
+              </button>
+            </div>
             <div className="mb-4">
               <div className="bg-white rounded-2xl shadow-lg p-4 border-4" style={{ borderColor: lesson.content.color }}>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -449,14 +536,14 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 mb-6">
                 <div className="text-4xl mb-2">{percentage}%</div>
                 <p className="text-gray-700">
-                  {scoringTotals.correct} {t.of} {scoringTotals.total} {language === 'tr' ? 'doğru cevap' : 'goede antwoorden'}
+                  {scoringTotals.correct} {t.of} {scoringTotals.total} {language === 'tr' ? 'doÄŸru cevap' : 'goede antwoorden'}
                 </p>
               </div>
               
               <p className="text-green-600 mb-6">
                 {percentage >= 80 
-                  ? (language === 'tr' ? 'Harika i?! Sonraki derse haz?rs?n!' : 'Geweldig werk! Je bent klaar voor de volgende les!')
-                  : (language === 'tr' ? '?yi i?! Prati?e devam et!' : 'Goed gedaan! Blijf oefenen!')
+                  ? (language === 'tr' ? 'Harika iş! Sonraki derse hazırsın!' : 'Geweldig werk! Je bent klaar voor de volgende les!')
+                  : (language === 'tr' ? 'İyi iş! Pratiğe devam et!' : 'Goed gedaan! Blijf oefenen!')
                 }
               </p>
               
@@ -481,7 +568,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
   const isFirstLetter = currentLetterIndex === 0;
   const isLastLetter = currentLetterIndex === totalLetters - 1;
 
-    if (!currentLetter) return null;
+  if (!currentLetter) return null;
 
     const letterTypeColors: {[key: string]: string} = {
       'interdental': '#3B82F6', // Blue
@@ -492,8 +579,8 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
     const bgColor = currentLetter.type ? letterTypeColors[currentLetter.type] : letterTypeColors['normal'];
     const letterTypeLabels: {[key: string]: { tr: string; nl: string }} = {
       interdental: { tr: 'Peltek', nl: 'Interdentaal' },
-      heavy: { tr: 'Kalın', nl: 'Zwaar' },
-      'heavy-interdental': { tr: 'Kalın + peltek', nl: 'Zwaar + interdentaal' },
+      heavy: { tr: 'KalÄ±n', nl: 'Zwaar' },
+      'heavy-interdental': { tr: 'KalÄ±n + peltek', nl: 'Zwaar + interdentaal' },
     };
     const typeDescriptions: {[key: string]: { tr: string; nl: string }} = {
       normal: {
@@ -524,6 +611,14 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
           ? (language === 'tr' ? currentLetter.note.tr : currentLetter.note.nl)
           : (language === 'tr' ? typeDescriptions[currentLetter.type]?.tr : typeDescriptions[currentLetter.type]?.nl))
       : null;
+    const currentLesson3Forms =
+      lesson.order === 3
+        ? (() => {
+            const idx = baseArabicOrder.indexOf((currentLetter.arabic || '').trim());
+            const safeIndex = idx >= 0 ? idx : Math.min(currentLetterIndex, lesson3Forms.length - 1);
+            return lesson3Forms[safeIndex];
+          })()
+        : null;
 
     const handleLetterPrevious = () => {
       if (currentLetterIndex > 0) {
@@ -544,38 +639,9 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
     const playLetterAudio = () => {
       if (!currentLetter) return;
 
-    const letterAudioByIndex: string[] = [
-      'alif',
-      'ba',
-      'ta (neutral)',
-      'tha',
-      'jim',
-      'ha early',
-      'kha',
-      'dal',
-      'dhal',
-      'ra',
-      'ze',
-      'sin',
-      'shin',
-      'sad',
-      'dad',
-      'ta (heavy)',
-      'za',
-      'ayn',
-      'ghayn',
-      'fa',
-      'qaf',
-      'kaf',
-      'lam',
-      'mim',
-      'nun',
-      'ha later',
-      'waw',
-      'ya'
-    ];
-
-      const fileName = letterAudioByIndex[currentLetterIndex % letterAudioByIndex.length];
+      const fileName =
+        getLetterAudioId(currentLetter.arabic) ||
+        letterAudioByOrder[currentLetterIndex % letterAudioByOrder.length];
       playAudioClip(fileName);
     };
 
@@ -595,25 +661,33 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
       }
     };
 
-    if (showIntro) {
+if (showIntro) {
       return (
         <div className="min-h-screen p-3" style={{ backgroundColor: '#e6f4ff' }}>
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-2xl shadow-xl p-8 border border-purple-200">
               <h1 className="text-3xl text-purple-800 mb-3 text-center">
-                {language === 'tr' ? '1. Derse Başla' : 'Start met les 1'}
+                {language === 'tr' ? `${lesson.order}. Derse Başla` : `Start met les ${lesson.order}`}
               </h1>
               <p className="text-gray-700 text-center mb-6">
-                {language === 'tr'
-                  ? 'Bu derste Arap harflerini tanıyacak, sesleri dinleyip ayırt edecek ve hızlı tanıma alıştırmaları yapacaksın.'
-                  : 'In deze les leer je de Arabische letters herkennen, luister je naar de klanken en oefen je met snelle herkenning.'}
+                {lesson.order === 1
+                  ? (language === 'tr'
+                    ? 'Bu derste Arap harflerini tanıyacak, sesleri dinleyip ayırt edecek ve hızlı tanıma alıştırmaları yapacaksın.'
+                    : 'In deze les leer je de Arabische letters herkennen, luister je naar de klanken en oefen je met snelle herkenning.')
+                  : lesson.order === 2
+                    ? (language === 'tr'
+                      ? 'Bu derste Arapça harfleri karışık sırayla tekrar ediyorsun, seslerini dinliyorsun ve hızlı tanımayı pekiştiriyorsun.'
+                      : 'In deze les herhaal je de Arabische letters in een willekeurige volgorde, luister je naar de klanken en oefen je met herkenning.')
+                    : (language === 'tr'
+                      ? 'Bu derste Arapça harflerin kelimenin başında, ortasında ve sonunda nasıl yazıldığını öğreniyorsun. Ayrıca harflerin birbirine nasıl bağlandığını da görüyorsun.'
+                      : 'In deze les leer je hoe de Arabische letters eruitzien aan het begin, in het midden en aan het einde van een woord. Je ziet ook hoe de letters met elkaar worden verbonden.')}
               </p>
               <div className="text-center">
                 <button
                   onClick={() => setShowIntro(false)}
                   className="px-8 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl shadow-md transition-all"
                 >
-                  {language === 'tr' ? 'Derse Başla' : 'Begin met les 1'}
+                  {language === 'tr' ? `${lesson.order}. Derse Başla` : `Begin met les ${lesson.order}`}
                 </button>
               </div>
             </div>
@@ -628,7 +702,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
           <div className="mb-3">
             <button
               onClick={onBack}
-              className="flex items-center gap-2 text-purple-600 hover:text-purple-800 mb-2 transition-colors"
+              className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 border border-purple-200 rounded-full px-3 py-1 shadow-sm bg-white transition-colors mb-3"
             >
               <ArrowLeft className="w-4 h-4" />
               {t.back}
@@ -652,7 +726,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                     className="h-2 rounded-full transition-all duration-300"
                     style={{ 
                       width: `${((currentLetterIndex + 1) / totalLetters) * 100}%`,
-                      backgroundColor: lesson.content.color
+                      background: 'linear-gradient(90deg, #a855f7, #ec4899, #f59e0b)'
                     }}
                   />
                 </div>
@@ -663,53 +737,98 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
 
           {/* Compact Letter Card Display */}
           <div className="bg-white rounded-2xl shadow-xl p-4 mb-3 border-4" style={{ borderColor: bgColor }}>
-            <div className="grid md:grid-cols-3 gap-4 mb-3">
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border-2 relative" style={{ borderColor: bgColor + '40' }}>
-                <div 
-                  className="flex items-center justify-center arabic-text"
-                  style={{ 
-                    fontSize: '5rem', 
-                    color: bgColor,
-                    lineHeight: '1',
-                    minHeight: '120px'
-                  }}
-                >
-                  {currentLetter.arabic}
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-200 relative">
-                <p className="text-gray-600 text-xs mb-1">{t.letterName}</p>
-                <p className="text-xl font-semibold text-gray-900">{currentLetter.name}</p>
-                <p className="text-gray-600 text-xs mt-3 mb-1">{t.letterPronunciationLabel}</p>
-                <div className="flex items-center gap-3">
-                  <p className="text-gray-800 text-lg">
-                    {language === 'tr' ? currentLetter.pronunciation.tr : currentLetter.pronunciation.nl}
-                  </p>
-                  <Button
-                    size="sm"
-                    onClick={playLetterAudio}
-                    className="bg-purple-500 hover:bg-purple-600 text-white"
+            {lesson.order === 3 && currentLesson3Forms ? (
+              <div className="grid md:grid-cols-4 gap-4 mb-3">
+                {[
+                  { key: 'end', label: language === 'tr' ? 'Son' : 'Einde', value: currentLesson3Forms.end },
+                  { key: 'middle', label: language === 'tr' ? 'Orta' : 'Midden', value: currentLesson3Forms.middle },
+                  { key: 'beginning', label: language === 'tr' ? 'Başlangıç' : 'Begin', value: currentLesson3Forms.beginning },
+                  { key: 'isolated', label: language === 'tr' ? 'Bağsız' : 'Losstaand', value: currentLesson3Forms.isolated, canListen: true }
+                ].map(card => (
+                  <div
+                    key={card.key}
+                    className="bg-gray-50 rounded-xl p-4 border-2 flex flex-col items-center justify-center text-center"
+                    style={{ borderColor: bgColor + '40' }}
                   >
-                    <Volume2 className="w-4 h-4 mr-1" />
-                    {language === 'tr' ? 'Dinle' : 'Luister'}
-                  </Button>
-                </div>
+                    <p className="text-gray-600 text-xs mb-2">{card.label}</p>
+                    <div
+                      className="arabic-text flex items-center justify-center mb-3"
+                      style={{
+                        fontSize: '3.5rem',
+                        color: bgColor,
+                        lineHeight: '1',
+                        minHeight: '100px'
+                      }}
+                    >
+                      {card.value}
+                    </div>
+                    {card.canListen && (
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const audioId =
+                            getLetterAudioId(currentLesson3Forms.isolated) ||
+                            letterAudioByOrder[currentLetterIndex % letterAudioByOrder.length];
+                          playAudioClip(audioId);
+                        }}
+                        className="bg-purple-500 hover:bg-purple-600 text-white"
+                      >
+                        <Volume2 className="w-4 h-4 mr-1" />
+                        {language === 'tr' ? 'Dinle' : 'Luister'}
+                      </Button>
+                    )}
+                  </div>
+                ))}
               </div>
-
-              {currentLetter.word && (
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border-2 border-green-200">
-                  <p className="text-gray-600 text-xs mb-1">{t.wordStartsWith}</p>
-                  <p className="text-xl font-semibold text-gray-900">
-                    {language === 'tr' ? currentLetter.word.pronunciation.tr : currentLetter.word.pronunciation.nl}
-                  </p>
-                  <p className="text-gray-600 text-xs mt-3 mb-1">{t.wordMeaning}</p>
-                  <p className="text-gray-800 text-sm">
-                    {language === 'tr' ? currentLetter.word.translation.tr : currentLetter.word.translation.nl}
-                  </p>
+            ) : (
+              <div className="grid md:grid-cols-3 gap-4 mb-3">
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border-2 relative" style={{ borderColor: bgColor + '40' }}>
+                  <div 
+                    className="flex items-center justify-center arabic-text"
+                    style={{ 
+                      fontSize: '5rem', 
+                      color: bgColor,
+                      lineHeight: '1',
+                      minHeight: '120px'
+                    }}
+                  >
+                    {currentLetter.arabic}
+                  </div>
                 </div>
-              )}
-            </div>
+
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-200 relative">
+                  <p className="text-gray-600 text-xs mb-1">{t.letterName}</p>
+                  <p className="text-xl font-semibold text-gray-900">{currentLetter.name}</p>
+                  <p className="text-gray-600 text-xs mt-3 mb-1">{t.letterPronunciationLabel}</p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-gray-800 text-lg">
+                      {language === 'tr' ? currentLetter.pronunciation.tr : currentLetter.pronunciation.nl}
+                    </p>
+                    <Button
+                      size="sm"
+                      onClick={playLetterAudio}
+                      className="bg-purple-500 hover:bg-purple-600 text-white"
+                    >
+                      <Volume2 className="w-4 h-4 mr-1" />
+                      {language === 'tr' ? 'Dinle' : 'Luister'}
+                    </Button>
+                  </div>
+                </div>
+
+                {currentLetter.word && (
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border-2 border-green-200">
+                    <p className="text-gray-600 text-xs mb-1">{t.wordStartsWith}</p>
+                    <p className="text-xl font-semibold text-gray-900">
+                      {language === 'tr' ? currentLetter.word.pronunciation.tr : currentLetter.word.pronunciation.nl}
+                    </p>
+                    <p className="text-gray-600 text-xs mt-3 mb-1">{t.wordMeaning}</p>
+                    <p className="text-gray-800 text-sm">
+                      {language === 'tr' ? currentLetter.word.translation.tr : currentLetter.word.translation.nl}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {currentLetter.type && (
               <div 
@@ -910,9 +1029,9 @@ if (completed) {
             </div>
             <h1 className="text-purple-800 mb-4">{t.lessonComplete}</h1>
             <p className="text-gray-600 mb-4 text-xl">{localizedTitle}</p>
-            <p className="text-green-600 mb-8">
-              {language === 'tr' ? '🎉 Harika iş! Sonraki derse geçiyorsun...' : '🎉 Geweldig werk! Naar de volgende les...'}
-            </p>
+              <p className="text-green-600 mb-8">
+                {language === 'tr' ? '🎉 Harika iş! Sonraki derse geçiyorsun...' : '🎉 Geweldig werk! Naar de volgende les...'}
+              </p>
             
             <div className="flex gap-4 justify-center">
               <button
@@ -978,16 +1097,16 @@ if (completed) {
             <span className="text-gray-600 text-sm">
               {currentItemIndex + 1} {t.of} {totalItems}
             </span>
-            <div className="flex-1 mx-4 bg-gray-200 rounded-full h-2">
-              <div
-                className="h-2 rounded-full transition-all duration-300"
-                style={{ 
-                  width: `${((currentItemIndex + 1) / totalItems) * 100}%`,
-                  backgroundColor: lesson.content.color
-                }}
-              />
+              <div className="flex-1 mx-4 bg-gray-200 rounded-full h-2">
+                <div
+                  className="h-2 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${((currentItemIndex + 1) / totalItems) * 100}%`,
+                    background: 'linear-gradient(90deg, #a855f7, #ec4899, #f59e0b)'
+                  }}
+                />
+              </div>
             </div>
-          </div>
           <div className="flex gap-3">
             <button
               onClick={handlePrevious}

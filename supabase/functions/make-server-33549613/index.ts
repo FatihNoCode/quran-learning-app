@@ -601,7 +601,7 @@ app.post("/progress/:userId", handlePostProgress);
 app.post("/make-server-33549613/progress/:userId", handlePostProgress);
 
 // Get all students (for teacher dashboard, requires auth)
-app.get("/students", async (c) => {
+const handleGetStudents = async (c: any) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -636,10 +636,12 @@ app.get("/students", async (c) => {
     console.log(`Error getting students: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
-});
+};
+app.get("/students", handleGetStudents);
+app.get("/make-server-33549613/students", handleGetStudents);
 
 // Delete student (teacher only, requires auth)
-app.delete("/students/:userId", async (c) => {
+const handleDeleteStudent = async (c: any) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -682,10 +684,12 @@ app.delete("/students/:userId", async (c) => {
     console.log(`Error deleting student: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
-});
+};
+app.delete("/students/:userId", handleDeleteStudent);
+app.delete("/make-server-33549613/students/:userId", handleDeleteStudent);
 
-// Unlock level for student (teacher only, requires auth)
-app.post("/students/:userId/unlock-level", async (c) => {
+// Unlock lessons for student (teacher only, requires auth)
+const handleUnlockLevel = async (c: any) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -699,11 +703,15 @@ app.post("/students/:userId/unlock-level", async (c) => {
     }
 
     const userId = c.req.param('userId');
-    const { level } = await c.req.json();
+    const { lessonOrder } = await c.req.json();
 
-    if (!level) {
-      return c.json({ error: "Level is required" }, 400);
+    if (!lessonOrder || lessonOrder < 1) {
+      return c.json({ error: "Valid lesson order is required" }, 400);
     }
+
+    // Total lessons in the placeholder curriculum
+    const TOTAL_LESSONS = 25;
+    const targetOrder = Math.min(lessonOrder, TOTAL_LESSONS);
 
     // Get current progress
     const currentProgress = await kv.get(`progress:${userId}`);
@@ -711,11 +719,18 @@ app.post("/students/:userId/unlock-level", async (c) => {
       return c.json({ error: "Student not found" }, 404);
     }
 
-    // Update to new level
+    // Mark all lessons before the target as completed; position student at the target lesson
+    const completedLessons = Array.from(
+      { length: Math.max(0, targetOrder - 1) },
+      (_, i) => `lesson-${i + 1}`
+    );
+
+    // Update to new lesson position
     const updatedProgress = {
       ...currentProgress,
-      currentLevel: level,
-      currentLessonIndex: 0,
+      currentLessonIndex: Math.max(0, targetOrder - 1),
+      currentLessonOrder: targetOrder,
+      completedLessons,
       lastActive: new Date().toISOString()
     };
 
@@ -726,10 +741,12 @@ app.post("/students/:userId/unlock-level", async (c) => {
     console.log(`Error unlocking level: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
-});
+};
+app.post("/students/:userId/unlock-level", handleUnlockLevel);
+app.post("/make-server-33549613/students/:userId/unlock-level", handleUnlockLevel);
 
 // Reset student progress (teacher only, requires auth)
-app.post("/students/:userId/reset-progress", async (c) => {
+const handleResetProgress = async (c: any) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -770,10 +787,12 @@ app.post("/students/:userId/reset-progress", async (c) => {
     console.log(`Error resetting progress: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
-});
+};
+app.post("/students/:userId/reset-progress", handleResetProgress);
+app.post("/make-server-33549613/students/:userId/reset-progress", handleResetProgress);
 
 // Reset student progress to specific lesson (student self-service)
-app.post("/students/:userId/reset-to-lesson", async (c) => {
+const handleResetToLesson = async (c: any) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -826,10 +845,12 @@ app.post("/students/:userId/reset-to-lesson", async (c) => {
     console.log(`Error resetting to lesson: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
-});
+};
+app.post("/students/:userId/reset-to-lesson", handleResetToLesson);
+app.post("/make-server-33549613/students/:userId/reset-to-lesson", handleResetToLesson);
 
 // Get student password (teacher only, requires auth)
-app.get("/students/:userId/password", async (c) => {
+const handleGetStudentPassword = async (c: any) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -861,10 +882,12 @@ app.get("/students/:userId/password", async (c) => {
     console.log(`Error getting password: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
-});
+};
+app.get("/students/:userId/password", handleGetStudentPassword);
+app.get("/make-server-33549613/students/:userId/password", handleGetStudentPassword);
 
 // Get all teachers (master teacher only, requires auth)
-app.get("/teachers", async (c) => {
+const handleGetTeachers = async (c: any) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -898,10 +921,12 @@ app.get("/teachers", async (c) => {
     console.log(`Error getting teachers: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
-});
+};
+app.get("/teachers", handleGetTeachers);
+app.get("/make-server-33549613/teachers", handleGetTeachers);
 
 // Delete teacher (master teacher only, requires auth)
-app.delete("/teachers/:userId", async (c) => {
+const handleDeleteTeacher = async (c: any) => {
   try {
     const accessToken = c.req.header('Authorization')?.split(' ')[1];
     const supabase = createClient(
@@ -955,7 +980,9 @@ app.delete("/teachers/:userId", async (c) => {
     console.log(`Error deleting teacher: ${error.message}`);
     return c.json({ error: error.message }, 500);
   }
-});
+};
+app.delete("/teachers/:userId", handleDeleteTeacher);
+app.delete("/make-server-33549613/teachers/:userId", handleDeleteTeacher);
 
 // Content endpoints
 app.get("/content", async (c) => {

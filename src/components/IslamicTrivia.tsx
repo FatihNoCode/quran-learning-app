@@ -3,6 +3,7 @@ import { BookOpen, CheckCircle, XCircle, Star, Award, Sparkles, ArrowLeft } from
 
 interface IslamicTriviaProps {
   language: 'tr' | 'nl';
+  onBack?: () => void;
 }
 
 interface TriviaQuestion {
@@ -882,7 +883,7 @@ const triviaThemes: TriviaTheme[] = [
   }
 ];
 
-export default function IslamicTrivia({ language }: IslamicTriviaProps) {
+export default function IslamicTrivia({ language, onBack }: IslamicTriviaProps) {
   const [selectedTheme, setSelectedTheme] = useState<TriviaTheme | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -902,11 +903,12 @@ export default function IslamicTrivia({ language }: IslamicTriviaProps) {
       correct: 'Doğru!',
       incorrect: 'Yanlış',
       score: 'Puan',
-      explanation: 'Açıklama',
-      completed: 'Tebrikler! Tüm soruları tamamladınız!',
+      explanation: 'A??klama',
+      completed: 'Tebrikler! T?m sorular? tamamlad?n?z!',
       yourScore: 'Skorunuz',
-      restart: 'Yeniden Başla',
-      backToThemes: 'Temalara Dön'
+      restart: 'Yeniden Ba?la',
+      backToThemes: 'Temalara D?n',
+      back: 'Geri D?n'
     },
     nl: {
       title: 'Islamitische Trivia',
@@ -923,7 +925,8 @@ export default function IslamicTrivia({ language }: IslamicTriviaProps) {
       completed: 'Gefeliciteerd! Je hebt alle vragen beantwoord!',
       yourScore: 'Je score',
       restart: 'Opnieuw',
-      backToThemes: 'Terug naar Thema\'s'
+      backToThemes: 'Terug naar Thema\'s',
+      back: 'Terug'
     }
   };
 
@@ -959,7 +962,46 @@ export default function IslamicTrivia({ language }: IslamicTriviaProps) {
   };
 
   const handleNextQuestion = () => {
-    if (!selectedTheme) return;
+  if (!selectedTheme) {
+    return (
+      <div className="min-h-screen bg-blue-50 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-4">
+            <button
+              onClick={() => onBack?.()}
+              className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 border border-purple-200 rounded-full px-3 py-1 shadow-sm bg-white"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {t.back}
+            </button>
+          </div>
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full mb-4">
+              <BookOpen className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-purple-600 mb-2">{t.title}</h1>
+            <p className="text-gray-600">{t.subtitle}</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {triviaThemes.map((theme) => (
+              <button
+                key={theme.id}
+                onClick={() => handleThemeSelect(theme)}
+                className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
+              >
+                <div className={`inline-flex items-center justify-center w-16 h-16 ${getColorClass(theme.color)} rounded-full mb-4`}>
+                  <span className="text-3xl">{theme.emoji}</span>
+                </div>
+                <h3 className="text-gray-800 mb-2">{theme.title[language]}</h3>
+                <p className="text-gray-600 text-sm">{theme.questions.length} {t.question}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
     if (currentQuestion < selectedTheme.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
@@ -1005,13 +1047,24 @@ export default function IslamicTrivia({ language }: IslamicTriviaProps) {
   };
 
   if (!selectedTheme) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full mb-4">
-              <BookOpen className="w-10 h-10 text-white" />
-            </div>
+      return (
+        <div className="min-h-screen" style={{ backgroundColor: '#e6f4ff' }}>
+          <div className="max-w-6xl mx-auto">
+            {onBack && (
+              <div className="mb-4">
+                <button
+                  onClick={onBack}
+                  className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 border border-purple-200 rounded-full px-3 py-1 shadow-sm bg-white"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  {t.back}
+                </button>
+              </div>
+            )}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full mb-4">
+                <BookOpen className="w-10 h-10 text-white" />
+              </div>
             <h1 className="text-purple-600 mb-2">{t.title}</h1>
             <p className="text-gray-600">{t.subtitle}</p>
           </div>
@@ -1039,24 +1092,20 @@ export default function IslamicTrivia({ language }: IslamicTriviaProps) {
   const currentQ = selectedTheme.questions[currentQuestion];
   const isCompleted = currentQuestion === selectedTheme.questions.length - 1 && showExplanation;
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-6 flex items-center justify-between">
-          <button
-            onClick={handleBackToThemes}
-            className="flex items-center gap-2 text-purple-600 hover:text-purple-700"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            {t.backToThemes}
-          </button>
-          <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
-            <Star className="w-5 h-5 text-yellow-500" />
-            <span className="text-gray-700">{t.score}: {score}/{selectedTheme.questions.length}</span>
+    return (
+        <div className="min-h-screen" style={{ backgroundColor: '#e6f4ff' }}>
+        <div className="max-w-3xl mx-auto">
+          <div className="mb-6 flex items-center">
+            <button
+              onClick={handleBackToThemes}
+              className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 border border-purple-200 rounded-full px-3 py-1 shadow-sm bg-white"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {language === 'tr' ? 'Geri Dön' : 'Terug'}
+            </button>
           </div>
-        </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+        <div className="rounded-2xl shadow-none border border-blue-100 p-6 md:p-8 bg-white" style={{ backgroundColor: '#ffffff' }}>
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className={`w-12 h-12 ${getColorClass(selectedTheme.color)} rounded-full flex items-center justify-center`}>
@@ -1068,6 +1117,10 @@ export default function IslamicTrivia({ language }: IslamicTriviaProps) {
                   {t.question} {currentQuestion + 1} {t.of} {selectedTheme.questions.length}
                 </p>
               </div>
+            </div>
+            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+              <Star className="w-5 h-5 text-yellow-500" />
+              <span className="text-gray-700">{t.score}: {score}/{selectedTheme.questions.length}</span>
             </div>
           </div>
 
@@ -1116,7 +1169,7 @@ export default function IslamicTrivia({ language }: IslamicTriviaProps) {
               </div>
 
               {showExplanation && (
-                <div className={`p-4 rounded-xl mb-6 ${selectedAnswer === currentQ.correctAnswer ? 'bg-green-50 border-2 border-green-200' : 'bg-blue-50 border-2 border-blue-200'}`}>
+                <div className={`p-4 rounded-xl mb-6 ${selectedAnswer === currentQ.correctAnswer ? 'bg-green-50 border-2 border-green-200' : ''}`} style={selectedAnswer === currentQ.correctAnswer ? undefined : { backgroundColor: '#e6f4ff', border: '2px solid #bfdbfe' }}>
                   <div className="flex items-start gap-3">
                     {selectedAnswer === currentQ.correctAnswer ? (
                       <Award className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
@@ -1138,14 +1191,16 @@ export default function IslamicTrivia({ language }: IslamicTriviaProps) {
                   <button
                     onClick={handleCheckAnswer}
                     disabled={selectedAnswer === null}
-                    className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-xl hover:from-purple-600 hover:to-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 text-white py-3 rounded-xl transition-all disabled:cursor-not-allowed"
+                    style={{ backgroundColor: '#9810fa', color: '#fff' }}
                   >
                     {t.checkAnswer}
                   </button>
                 ) : currentQuestion < selectedTheme.questions.length - 1 ? (
                   <button
                     onClick={handleNextQuestion}
-                    className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white py-3 rounded-xl hover:from-purple-600 hover:to-blue-600 transition-all"
+                    className="flex-1 text-white py-3 rounded-xl transition-all"
+                    style={{ backgroundColor: '#9810fa', color: '#fff' }}
                   >
                     {t.nextQuestion}
                   </button>

@@ -107,6 +107,44 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
 
   const t = translations[language];
   const isMasterTeacher = user.isMasterTeacher || false;
+  // Edge function base path for Supabase functions
+  const apiBase = `https://${projectId}.supabase.co/functions/v1`;
+  // Some environments deploy the API as "make-server-33549613", others under "server/make-server-33549613"
+  const apiPaths = (path: string) => [path, `/server${path}`];
+
+  const safeJson = async (response: Response) => {
+    const text = await response.text();
+    const contentType = response.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      try {
+        return JSON.parse(text);
+      } catch (err) {
+        console.error('Failed to parse JSON', err, text);
+        return null;
+      }
+    }
+
+    // Non-JSON response (e.g., HTML error page)
+    return null;
+  };
+
+  const fetchWithFallback = async (path: string, options: RequestInit = {}) => {
+    for (const candidate of apiPaths(path)) {
+      try {
+        const response = await fetch(`${apiBase}${candidate}`, options);
+        if (response.status !== 404) {
+          const data = await safeJson(response);
+          return { data, status: response.status };
+        }
+      } catch (err) {
+        console.error('Fetch error', err);
+      }
+    }
+
+    // If all attempts failed with 404, return the last response shape
+    return { data: null, status: 404 };
+  };
 
   useEffect(() => {
     fetchStudents();
@@ -123,23 +161,16 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
         return;
       }
 
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-33549613/students`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
+      const { data, status } = await fetchWithFallback(`/make-server-33549613/students`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
         }
-      );
+      });
 
-      const data = await response.json();
-      if (response.ok) {
+      if (status === 200 && data) {
         setStudents(data.students || []);
       } else {
-        console.error('Error fetching students - Status:', response.status, 'Data:', data);
-        if (response.status === 401) {
-          console.error('Authentication failed. Token may be expired. Please log out and log in again.');
-        }
+        console.error('Error fetching students - Status:', status, 'Data:', data);
       }
     } catch (error) {
       console.error('Error fetching students:', error instanceof Error ? error.message : error);
@@ -156,23 +187,16 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
         return;
       }
 
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-33549613/teachers`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
+      const { data, status } = await fetchWithFallback(`/make-server-33549613/teachers`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
         }
-      );
+      });
 
-      const data = await response.json();
-      if (response.ok) {
+      if (status === 200 && data) {
         setTeachers(data.teachers || []);
       } else {
-        console.error('Error fetching teachers - Status:', response.status, 'Data:', data);
-        if (response.status === 401) {
-          console.error('Authentication failed. Token may be expired. Please log out and log in again.');
-        }
+        console.error('Error fetching teachers - Status:', status, 'Data:', data);
       }
     } catch (error) {
       console.error('Error fetching teachers:', error instanceof Error ? error.message : error);
@@ -183,23 +207,19 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
 
   const handleDeleteTeacher = async (teacherId: string) => {
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-33549613/teachers/${teacherId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
+      const { data, status } = await fetchWithFallback(`/make-server-33549613/teachers/${teacherId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
         }
-      );
+      });
 
-      const data = await response.json();
-      if (response.ok) {
-        // Refresh teachers list
+      if (status === 200) {
         fetchTeachers();
       } else {
-        console.error('Error deleting teacher:', data.error);
-        alert(data.error || 'Error deleting teacher');
+        const errorMsg = data?.error || 'Error deleting teacher';
+        console.error('Error deleting teacher:', errorMsg);
+        alert(errorMsg);
       }
     } catch (error) {
       console.error('Error deleting teacher:', error);
@@ -373,7 +393,11 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
                   <tbody className="divide-y divide-gray-200">
                     {students.map((student) => {
                       const progressPercent = (student.completedLessons.length / placeholderLessons.length) * 100;
-                      
+                      const lessonOrder = student.currentLessonOrder || (student.currentLessonIndex + 1) || 1;
+                      const lessonLabel = language === 'tr'
+                        ? `Ders ${lessonOrder}/${placeholderLessons.length}`
+                        : `Les ${lessonOrder}/${placeholderLessons.length}`;
+
                       return (
                         <tr key={student.userId} className="hover:bg-purple-50 transition-colors">
                           <td className="px-6 py-4">
@@ -390,9 +414,12 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
                               <BookOpen className="text-purple-600" size={16} />
-                              <span className="text-gray-700">
-                                {LESSON_LEVELS[student.currentLevel as keyof typeof LESSON_LEVELS]?.[language] || student.currentLevel}
-                              </span>
+                              <div className="text-gray-700">
+                                <p>{lessonLabel}</p>
+                                <p className="text-xs text-gray-500">
+                                  {LESSON_LEVELS[student.currentLevel as keyof typeof LESSON_LEVELS]?.[language] || student.currentLevel}
+                                </p>
+                              </div>
                             </div>
                           </td>
                           <td className="px-6 py-4">
@@ -514,7 +541,7 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
         )}
       </div>
 
-      {/* Level Distribution Chart */}
+      {/* Lesson Distribution Chart */}
       {students.length > 0 && (
         <div className="bg-white rounded-2xl shadow-lg p-6 border-4 border-blue-200">
           <div className="flex items-center gap-3 mb-6">
@@ -522,23 +549,23 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
               <BarChart className="text-blue-600" size={24} />
             </div>
             <h2 className="text-blue-800">
-              {language === 'tr' ? 'Seviye Dağılımı' : 'Niveau Verdeling'}
+              {language === 'tr' ? 'Ders Dağılımı' : 'Les verdeling'}
             </h2>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {Object.entries(LESSON_LEVELS).map(([key, value]) => {
-              const count = students.filter(s => s.currentLevel === key).length;
+            {placeholderLessons.map((lesson) => {
+              const count = students.filter(s => s.completedLessons?.includes(lesson.id)).length;
               const percentage = totalStudents > 0 ? (count / totalStudents) * 100 : 0;
 
               return (
-                <div key={key} className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
+                <div key={lesson.id} className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
                   <div className="text-center mb-2">
                     <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-500 rounded-full mb-2">
                       <BookOpen className="text-white" size={20} />
                     </div>
                     <p className="text-sm text-gray-700 mb-1">
-                      {value[language]}
+                      {lesson.title[language]}
                     </p>
                     <p className="text-blue-800">{count}</p>
                   </div>
