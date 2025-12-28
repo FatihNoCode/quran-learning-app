@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Trophy, Target, Star, Brain, TrendingUp, Clock, AlertCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Trophy, Target, Brain, Clock, AlertCircle, RotateCcw } from 'lucide-react';
+import StarIcon from './icons/StarIcon';
+import GrowthIcon from './icons/GrowthIcon';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
@@ -228,7 +230,7 @@ export function StudentDetailView({ studentId, accessToken, language, onBack }: 
 
         <Card className="p-4 border-4 border-blue-200">
           <div className="flex items-center gap-2 mb-2">
-            <Star className="text-blue-600" size={20} />
+            <StarIcon className="text-blue-600" size={20} />
             <p className="text-sm text-gray-600">{t.completedLessons}</p>
           </div>
           <p className="text-2xl text-blue-800">{progress.completedLessons?.length || 0}</p>
@@ -244,7 +246,7 @@ export function StudentDetailView({ studentId, accessToken, language, onBack }: 
 
         <Card className="p-4 border-4 border-orange-200">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="text-orange-600" size={20} />
+            <GrowthIcon className="text-orange-600" size={20} />
             <p className="text-sm text-gray-600">{t.currentStreak}</p>
           </div>
           <p className="text-2xl text-orange-800">{progress.stats?.currentStreak || 0} 🔥</p>
@@ -352,7 +354,7 @@ export function StudentDetailView({ studentId, accessToken, language, onBack }: 
         {/* Strong Skills */}
         <Card className="p-6 border-4 border-green-200">
           <h2 className="text-2xl mb-4 flex items-center gap-2 text-green-800">
-            <Star className="text-green-600" size={28} />
+            <StarIcon className="text-green-600" size={28} />
             {t.strongSkills}
           </h2>
           {strongSkills.length > 0 ? (

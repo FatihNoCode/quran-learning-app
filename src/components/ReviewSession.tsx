@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Lesson } from '../data/lessons';
-import { Volume2, CheckCircle, XCircle, ArrowLeft, Award } from 'lucide-react';
+import { Volume2, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
+import BadgeIcon from './icons/BadgeIcon';
 
 interface ReviewSessionProps {
   lessons: Lesson[];
@@ -120,7 +121,7 @@ export default function ReviewSession({ lessons, language, onComplete, onBack }:
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-3xl shadow-2xl p-12 text-center border-4 border-purple-200">
           <div className="bg-gradient-to-br from-purple-500 to-pink-500 w-32 h-32 rounded-full mx-auto mb-6 flex items-center justify-center">
-            <Award className="text-white" size={64} />
+            <BadgeIcon size={64} className="text-white" />
           </div>
           
           <h1 className="text-purple-800 mb-4">{t.complete}</h1>

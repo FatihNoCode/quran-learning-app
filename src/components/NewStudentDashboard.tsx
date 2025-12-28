@@ -10,7 +10,14 @@ import { Leaderboard } from './Leaderboard';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
-import { BookOpen, Brain, User, Star, Award, TrendingUp, Flame, Sparkles, CheckCircle, RefreshCcw } from 'lucide-react';
+import { User, CheckCircle, RefreshCcw } from 'lucide-react';
+import BookIcon from './icons/BookIcon';
+import BrainIcon from './icons/BrainIcon';
+import ProgressIcon from './icons/ProgressIcon';
+import StarIcon from './icons/StarIcon';
+import BadgeIcon from './icons/BadgeIcon';
+import FlameIcon from './icons/FlameIcon';
+import GrowthIcon from './icons/GrowthIcon';
 import { StudentProgress, Badge, getDueReviewItems, updateStreak } from '../utils/masterySystem';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { toast } from 'sonner@2.0.3';
@@ -67,9 +74,10 @@ interface NewStudentDashboardProps {
   onViewChange?: (view: ActivityView) => void;
   onLogout?: () => void;
   profileTrigger?: number;
+  onBugReport?: () => void;
 }
 
-export default function NewStudentDashboard({ context, onViewChange, onLogout, profileTrigger }: NewStudentDashboardProps) {
+export default function NewStudentDashboard({ context, onViewChange, onLogout, profileTrigger, onBugReport }: NewStudentDashboardProps) {
   const [currentView, setCurrentView] = useState<ActivityView>('dashboard');
   const [progress, setProgress] = useState<StudentProgress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -446,6 +454,7 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
         accessToken={accessToken}
         onProgressReset={fetchProgress}
         onLogout={onLogout}
+        onBugReport={onBugReport}
       />
     );
   }
@@ -481,7 +490,7 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
       <div className="grid md:grid-cols-4 gap-4">
         <Card className="p-4 bg-gradient-to-br from-purple-50 to-purple-100">
           <div className="flex items-center gap-3">
-            <Star className="text-purple-600" size={28} />
+            <StarIcon className="text-purple-600" size={28} />
             <div>
               <div className="text-2xl">{progress.totalPoints}</div>
               <div className="text-sm text-purple-700">
@@ -493,7 +502,7 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
 
         <Card className="p-4 bg-gradient-to-br from-blue-50 to-blue-100">
           <div className="flex items-center gap-3">
-            <TrendingUp className="text-blue-600" size={28} />
+            <GrowthIcon className="text-blue-600" size={28} />
             <div>
               <div className="text-2xl">{Math.round(progress.stats.averageAccuracy)}%</div>
               <div className="text-sm text-blue-700">
@@ -505,7 +514,7 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
 
         <Card className="p-4 bg-gradient-to-br from-orange-50 to-orange-100">
           <div className="flex items-center gap-3">
-            <Flame className="text-orange-600" size={28} />
+            <FlameIcon size={28} className="text-orange-600" />
             <div>
               <div className="text-2xl">{progress.stats.currentStreak}</div>
               <div className="text-sm text-orange-700">
@@ -517,7 +526,7 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
 
         <Card className="p-4 bg-gradient-to-br from-green-50 to-green-100">
           <div className="flex items-center gap-3">
-            <Award className="text-green-600" size={28} />
+            <BadgeIcon size={28} className="text-green-600" />
             <div>
               <div className="text-2xl">{progress.badges.length}</div>
               <div className="text-sm text-green-700">
@@ -558,7 +567,7 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
           }}
         >
           <div className="flex flex-col items-center text-center gap-3">
-            <BookOpen className="text-purple-600" size={48} />
+            <BookIcon className="text-purple-600" size={48} />
             <h3 className="text-xl">
               {language === 'tr' ? 'Derslere Göz At' : 'Bekijk Lessen'}
             </h3>
@@ -570,7 +579,7 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
 
         <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('practice')}>
           <div className="flex flex-col items-center text-center gap-3">
-            <Brain className="text-blue-600" size={48} />
+            <ProgressIcon className="text-blue-600" size={48} />
             <h3 className="text-xl">
               {language === 'tr' ? 'Zayıf Alanları Geliştir' : 'Oefen Zwakke Punten'}
             </h3>
@@ -585,7 +594,7 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
 
         <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setCurrentView('trivia')}>
           <div className="flex flex-col items-center text-center gap-3">
-            <Sparkles className="text-purple-600" size={48} />
+            <BrainIcon className="text-purple-600" size={48} />
             <h3 className="text-xl">
               {language === 'tr' ? 'Bilgi Yarışması' : 'Trivia'}
             </h3>

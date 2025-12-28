@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Medal, Award, TrendingUp, User } from 'lucide-react';
+import { Trophy, Medal, User } from 'lucide-react';
 import { projectId } from '../utils/supabase/info';
+import BadgeIcon from './icons/BadgeIcon';
 
 interface LeaderboardEntry {
   userId: string;
@@ -112,7 +113,7 @@ export function Leaderboard({ currentUserId, accessToken, language }: Leaderboar
       case 3:
         return <Medal className="text-amber-600" size={24} />;
       default:
-        return <Award className="text-blue-500" size={20} />;
+        return <BadgeIcon size={20} className="text-blue-500" />;
     }
   };
 

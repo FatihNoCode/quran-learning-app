@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Lesson } from '../data/lessons';
-import { CheckCircle, ArrowLeft, Sparkles, BookOpen, Info } from 'lucide-react';
+import { CheckCircle, ArrowLeft, Sparkles, Info } from 'lucide-react';
+import BookIcon from './icons/BookIcon';
 import { getLetterProperty, typeColors } from '../data/letterProperties';
 
 interface LessonViewerProps {
@@ -112,7 +113,7 @@ export default function LessonViewer({ lesson, language, onComplete, onBack }: L
             
             <div className="bg-blue-50 rounded-xl p-6 border-2 border-blue-300">
               <div className="flex items-center justify-center gap-3 mb-3">
-                <BookOpen className="text-blue-600" size={24} />
+                <BookIcon className="text-blue-600" size={24} />
                 <p className="text-blue-800">{language === 'tr' ? 'Harfi Oku' : 'Lees de letter'}</p>
               </div>
               <div className="text-7xl text-blue-800 text-center arabic-text">

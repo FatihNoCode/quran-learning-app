@@ -5,7 +5,8 @@ import { filterValidQuizzes } from '../utils/quizFilters';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
-import { Brain, ArrowLeft, Trophy } from 'lucide-react';
+import { ArrowLeft, Trophy } from 'lucide-react';
+import ProgressIcon from './icons/ProgressIcon';
 import {
   StudentProgress,
   getWeakSkills,
@@ -244,7 +245,7 @@ export function PracticeWeakAreas({ progress, language, onComplete, onBack }: Pr
               <ArrowLeft size={20} />
             </Button>
             <div className="flex items-center gap-2">
-              <Brain className="text-purple-500" size={28} />
+              <ProgressIcon className="text-purple-500" size={28} />
               <h2 className="text-2xl">
                 {language === 'tr' ? 'Zayıf Alanları Geliştir' : 'Oefen Zwakke Punten'}
               </h2>

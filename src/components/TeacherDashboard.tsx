@@ -3,7 +3,9 @@ import { projectId } from '../utils/supabase/info';
 import { AppContextType } from '../App';
 import { LESSON_LEVELS } from '../data/lessons';
 import { placeholderLessons } from '../data/placeholderLessons';
-import { Users, TrendingUp, Clock, Award, BookOpen, BarChart, Trash2, Unlock, Eye, EyeOff, Shield, Brain, Target } from 'lucide-react';
+import { Users, Clock, BarChart, Trash2, Unlock, Eye, EyeOff, Shield, Brain, Target } from 'lucide-react';
+import BookIcon from './icons/BookIcon';
+import GrowthIcon from './icons/GrowthIcon';
 import StudentManagement from './StudentManagement';
 import { StudentDetailView } from './StudentDetailView';
 import { ClassAnalytics } from './ClassAnalytics';
@@ -323,7 +325,7 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
         <div className="bg-white rounded-2xl shadow-lg p-6 border-4 border-green-200">
           <div className="flex items-center gap-3 mb-4">
             <div className="bg-green-100 p-3 rounded-xl">
-              <TrendingUp className="text-green-600" size={24} />
+              <GrowthIcon className="text-green-600" size={24} />
             </div>
             <h2 className="text-green-800">{t.avgProgress}</h2>
           </div>
@@ -413,7 +415,7 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
-                              <BookOpen className="text-purple-600" size={16} />
+                              <BookIcon className="text-purple-600" size={16} />
                               <div className="text-gray-700">
                                 <p>{lessonLabel}</p>
                                 <p className="text-xs text-gray-500">
@@ -562,7 +564,7 @@ export default function TeacherDashboard({ context }: TeacherDashboardProps) {
                 <div key={lesson.id} className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
                   <div className="text-center mb-2">
                     <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-500 rounded-full mb-2">
-                      <BookOpen className="text-white" size={20} />
+                      <BookIcon className="text-white" size={20} />
                     </div>
                     <p className="text-sm text-gray-700 mb-1">
                       {lesson.title[language]}

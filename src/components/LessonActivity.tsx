@@ -6,7 +6,8 @@ import { filterValidQuizzes } from '../utils/quizFilters';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
-import { BookOpen, Brain, Trophy, ArrowRight } from 'lucide-react';
+import { Brain, Trophy, ArrowRight } from 'lucide-react';
+import BookIcon from './icons/BookIcon';
 
 interface LessonActivityProps {
   lesson: PlaceholderLesson;

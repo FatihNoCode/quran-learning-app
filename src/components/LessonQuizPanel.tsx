@@ -10,7 +10,6 @@ import {
 } from '../utils/contentApi';
 import { User } from '../App';
 import {
-  BookOpen,
   Shield,
   ShieldCheck,
   PenSquare,
@@ -20,6 +19,7 @@ import {
   Loader2,
   BarChart3,
 } from 'lucide-react';
+import BookIcon from './icons/BookIcon';
 
 interface StudentSnapshot {
   userId: string;
@@ -207,7 +207,7 @@ export default function LessonQuizPanel({
 
       <div className="bg-white rounded-2xl shadow-lg p-4 border-4 border-purple-200 flex items-center gap-3">
         <div className="bg-purple-100 p-3 rounded-xl">
-          <BookOpen className="text-purple-600" size={22} />
+          <BookIcon className="text-purple-600" size={22} />
         </div>
         <div>
           <p className="text-gray-800 font-semibold">
@@ -284,7 +284,7 @@ export default function LessonQuizPanel({
 
           <div className="bg-white rounded-2xl shadow-lg p-4 border-4 border-green-200">
             <div className="flex items-center gap-2 mb-3">
-              <BookOpen className="text-green-600" size={18} />
+              <BookIcon className="text-green-600" size={18} />
               <p className="text-gray-800 font-semibold">
                 {lessonForm.id ? (language === 'tr' ? 'Dersi Güncelle' : 'Les bijwerken') : (language === 'tr' ? 'Yeni Ders' : 'Nieuwe les')}
               </p>

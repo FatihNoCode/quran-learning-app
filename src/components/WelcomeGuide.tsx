@@ -1,4 +1,7 @@
-import { BookOpen, Mic, Award, TrendingUp, X } from 'lucide-react';
+import { Mic, X } from 'lucide-react';
+import BookIcon from './icons/BookIcon';
+import BadgeIcon from './icons/BadgeIcon';
+import GrowthIcon from './icons/GrowthIcon';
 
 interface WelcomeGuideProps {
   role: 'student' | 'teacher';
@@ -13,7 +16,7 @@ const translations = {
       subtitle: 'Arapça okuma yolculuğuna başlayalım!',
       steps: [
         {
-          icon: BookOpen,
+        icon: BookIcon,
           title: 'Derslerle Öğren',
           description: 'Her ders bir harf veya kural öğretir. Sırayla ilerle!'
         },
@@ -23,12 +26,12 @@ const translations = {
           description: 'Mikrofona konuşarak telaffuzunu geliştir!'
         },
         {
-          icon: Award,
+          icon: BadgeIcon,
           title: 'Tekrar Et',
           description: 'Öğrendiklerini unutma! Tekrar sistemi sana yardımcı olur.'
         },
         {
-          icon: TrendingUp,
+          icon: GrowthIcon,
           title: 'İlerle ve Geliş!',
           description: 'Her seviyeyi tamamla ve Kuran okumayı öğren!'
         }
@@ -40,17 +43,17 @@ const translations = {
       subtitle: 'Öğrenci ilerlemelerini takip edin',
       steps: [
         {
-          icon: BookOpen,
+        icon: BookIcon,
           title: 'Öğrenci Listesi',
           description: 'Tüm öğrencilerinizi ve ilerlemelerini görün'
         },
         {
-          icon: TrendingUp,
+          icon: GrowthIcon,
           title: 'İstatistikler',
           description: 'Ortalama ilerleme ve aktiviteyi takip edin'
         },
         {
-          icon: Award,
+          icon: BadgeIcon,
           title: 'Seviye Dağılımı',
           description: 'Hangi öğrencinin hangi seviyede olduğunu görün'
         }
@@ -64,7 +67,7 @@ const translations = {
       subtitle: 'Laten we beginnen met je Arabische leerreis!',
       steps: [
         {
-          icon: BookOpen,
+        icon: BookIcon,
           title: 'Leer met Lessen',
           description: 'Elke les leert een letter of regel. Ga stap voor stap!'
         },
@@ -74,12 +77,12 @@ const translations = {
           description: 'Verbeter je uitspraak door in de microfoon te spreken!'
         },
         {
-          icon: Award,
+          icon: BadgeIcon,
           title: 'Herhaal',
           description: 'Vergeet niet wat je hebt geleerd! Het herhalingssysteem helpt je.'
         },
         {
-          icon: TrendingUp,
+          icon: GrowthIcon,
           title: 'Vooruitgang en Groei!',
           description: 'Voltooi elk niveau en leer de Koran te lezen!'
         }
@@ -91,17 +94,17 @@ const translations = {
       subtitle: 'Volg de voortgang van studenten',
       steps: [
         {
-          icon: BookOpen,
+        icon: BookIcon,
           title: 'Studentenlijst',
           description: 'Zie al je studenten en hun voortgang'
         },
         {
-          icon: TrendingUp,
+          icon: GrowthIcon,
           title: 'Statistieken',
           description: 'Volg gemiddelde voortgang en activiteit'
         },
         {
-          icon: Award,
+          icon: BadgeIcon,
           title: 'Niveau Verdeling',
           description: 'Zie welke student op welk niveau is'
         }

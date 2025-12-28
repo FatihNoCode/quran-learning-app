@@ -5,7 +5,11 @@ import { lessons, getLessonByOrder, getNextLesson, getTotalLessons, getLessonsBy
 import NewLessonViewer from './NewLessonViewer';
 import ReviewSession from './ReviewSession';
 import IslamicTrivia from './IslamicTrivia';
-import { BookOpen, Award, Clock, Star, TrendingUp, Brain, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Clock, Brain, RotateCcw, AlertTriangle } from 'lucide-react';
+import StarIcon from './icons/StarIcon';
+import BookIcon from './icons/BookIcon';
+import BadgeIcon from './icons/BadgeIcon';
+import GrowthIcon from './icons/GrowthIcon';
 
 interface StudentDashboardProps {
   context: AppContextType;
@@ -321,7 +325,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
               : 'text-gray-600 hover:bg-gray-100'
           }`}
         >
-          <BookOpen size={24} />
+          <BookIcon size={24} />
           <span>{language === 'tr' ? 'Dersler' : 'Lessen'}</span>
         </button>
         <button
@@ -348,7 +352,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
         <div className="bg-white rounded-2xl shadow-lg p-6 border-4 border-purple-200">
           <div className="flex items-center gap-3 mb-4">
             <div className="bg-purple-100 p-3 rounded-xl">
-              <TrendingUp className="text-purple-600" size={24} />
+              <GrowthIcon className="text-purple-600" size={24} />
             </div>
             <h2 className="text-purple-800">{t.progress}</h2>
           </div>
@@ -370,7 +374,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
         <div className="bg-white rounded-2xl shadow-lg p-6 border-4 border-green-200">
           <div className="flex items-center gap-3 mb-4">
             <div className="bg-green-100 p-3 rounded-xl">
-              <BookOpen className="text-green-600" size={24} />
+              <BookIcon className="text-green-600" size={24} />
             </div>
             <h2 className="text-green-800">{t.nextLesson}</h2>
           </div>
@@ -427,7 +431,7 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
           >
             <div className="flex items-center gap-4 mb-6">
               <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-                <Award className="text-white" size={36} />
+                <BadgeIcon size={36} className="text-white" />
               </div>
               <div>
                 <h2>{t.review}</h2>

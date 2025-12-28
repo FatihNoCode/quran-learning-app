@@ -202,34 +202,34 @@ export default function Auth({ onLogin, language, onLanguageChange }: AuthProps)
   };
 
   return (
-    <div className="min-h-screen bg-purple-100 flex items-center justify-center p-4">
-      {/* Language Toggle - Top Right */}
-      <div className="absolute top-4 right-4">
-        <div className="flex bg-white border-2 border-purple-300 rounded-lg overflow-hidden shadow-lg">
-          <button
-            onClick={() => onLanguageChange('tr')}
-            className={`px-6 py-3 transition-colors ${
-              language === 'tr'
-                ? 'bg-purple-500 text-white'
-                : 'text-purple-600 hover:bg-purple-50'
-            }`}
-          >
-            Türkçe
-          </button>
-          <button
-            onClick={() => onLanguageChange('nl')}
-            className={`px-6 py-3 transition-colors ${
-              language === 'nl'
-                ? 'bg-purple-500 text-white'
-                : 'text-purple-600 hover:bg-purple-50'
-            }`}
-          >
-            Nederlands
-          </button>
+    <div className="min-h-screen bg-purple-100 flex items-center justify-center p-4 relative">
+      <div className="max-w-md w-full relative">
+        {/* Language Toggle - Top Left (matches post-login pill) */}
+        <div className="absolute top-0 left-0 z-10">
+          <div className="flex bg-white border-2 border-purple-300 rounded-full overflow-hidden shadow-sm">
+            <button
+              onClick={() => onLanguageChange('tr')}
+              className={`px-4 py-2 transition-all ${
+                language === 'tr'
+                  ? 'bg-purple-500 text-white shadow-inner'
+                  : 'text-purple-600 hover:bg-purple-50'
+              }`}
+            >
+              TR
+            </button>
+            <button
+              onClick={() => onLanguageChange('nl')}
+              className={`px-4 py-2 transition-all ${
+                language === 'nl'
+                  ? 'bg-purple-500 text-white shadow-inner'
+                  : 'text-purple-600 hover:bg-purple-50'
+              }`}
+            >
+              NL
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div className="max-w-md w-full">
         {/* Header with Islamic Pattern */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 rounded-3xl mb-4 shadow-2xl transform hover:scale-105 transition-transform">
@@ -450,3 +450,4 @@ export default function Auth({ onLogin, language, onLanguageChange }: AuthProps)
     </div>
   );
 }
+

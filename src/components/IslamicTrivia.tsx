@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { BookOpen, CheckCircle, XCircle, Star, Award, Sparkles, ArrowLeft } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
+import StarIcon from './icons/StarIcon';
+import BrainIcon from './icons/BrainIcon';
+import BookIcon from './icons/BookIcon';
+import BadgeIcon from './icons/BadgeIcon';
 
 interface IslamicTriviaProps {
   language: 'tr' | 'nl';
@@ -977,7 +981,7 @@ export default function IslamicTrivia({ language, onBack }: IslamicTriviaProps) 
           </div>
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full mb-4">
-              <BookOpen className="w-10 h-10 text-white" />
+              <BookIcon className="w-10 h-10" />
             </div>
             <h1 className="text-purple-600 mb-2">{t.title}</h1>
             <p className="text-gray-600">{t.subtitle}</p>
@@ -1063,7 +1067,7 @@ export default function IslamicTrivia({ language, onBack }: IslamicTriviaProps) 
             )}
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full mb-4">
-                <BookOpen className="w-10 h-10 text-white" />
+                <BookIcon className="w-10 h-10" />
               </div>
             <h1 className="text-purple-600 mb-2">{t.title}</h1>
             <p className="text-gray-600">{t.subtitle}</p>
@@ -1118,11 +1122,11 @@ export default function IslamicTrivia({ language, onBack }: IslamicTriviaProps) 
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
-              <Star className="w-5 h-5 text-yellow-500" />
-              <span className="text-gray-700">{t.score}: {score}/{selectedTheme.questions.length}</span>
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md">
+                <StarIcon className="w-5 h-5 text-yellow-500" />
+                <span className="text-gray-700">{t.score}: {score}/{selectedTheme.questions.length}</span>
+              </div>
             </div>
-          </div>
 
           {!isCompleted ? (
             <>
@@ -1172,9 +1176,9 @@ export default function IslamicTrivia({ language, onBack }: IslamicTriviaProps) 
                 <div className={`p-4 rounded-xl mb-6 ${selectedAnswer === currentQ.correctAnswer ? 'bg-green-50 border-2 border-green-200' : ''}`} style={selectedAnswer === currentQ.correctAnswer ? undefined : { backgroundColor: '#e6f4ff', border: '2px solid #bfdbfe' }}>
                   <div className="flex items-start gap-3">
                     {selectedAnswer === currentQ.correctAnswer ? (
-                      <Award className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
+                      <BadgeIcon size={24} className="flex-shrink-0 mt-1" />
                     ) : (
-                      <Sparkles className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+                      <BrainIcon className="w-6 h-6 flex-shrink-0 mt-1" />
                     )}
                     <div>
                       <p className={`mb-2 ${selectedAnswer === currentQ.correctAnswer ? 'text-green-700' : 'text-blue-700'}`}>
@@ -1210,7 +1214,7 @@ export default function IslamicTrivia({ language, onBack }: IslamicTriviaProps) 
           ) : (
             <div className="text-center py-8">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full mb-4">
-                <Award className="w-10 h-10 text-white" />
+                <BadgeIcon size={40} className="text-white" />
               </div>
               <h2 className="text-gray-800 mb-4">{t.completed}</h2>
               <p className="text-gray-600 text-xl mb-6">

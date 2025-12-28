@@ -6,6 +6,9 @@ import { Check, X, Volume2 } from 'lucide-react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
+const ARABIC_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+const isArabicText = (text?: string) => !!text && ARABIC_REGEX.test(text);
+
 interface QuizComponentProps {
   quiz: Quiz;
   language: 'tr' | 'nl';
@@ -176,13 +179,27 @@ export function QuizComponent({
   };
   
   const autoSubmit =
-    (quiz.bundleId?.startsWith('lesson-3')) ||
+    quiz.bundleId?.startsWith('lesson-3') ||
+    quiz.bundleId?.startsWith('lesson-4') ||
     quiz.type === 'audio-mc' ||
     quiz.type === 'timed-audio-mc' ||
     quiz.type === 'error-detection';
   const maxAttempts = 2;
   const correctIndex = quiz.correctAnswer ?? null;
   const getQuestionAudio = () => quiz.audioId || quiz.audioUrl || quiz.promptAudioId;
+  const renderLetterAudioButtons = (lettersText: string, audioIds?: string[]) => {
+    const letters = lettersText.split(' ').filter(Boolean);
+    // Audio buttons removed for clarity; we still render RTL letter groups
+    return (
+      <div className="flex flex-row-reverse gap-2 flex-wrap" dir="rtl">
+        {letters.map((letter, idx) => (
+          <span key={`${letter}-${idx}`} className="arabic-text text-3xl md:text-4xl px-1">
+            {letter}
+          </span>
+        ))}
+      </div>
+    );
+  };
 
   const markAnswered = (isCorrectSelection: boolean, choice: number | null, attemptNumber: number) => {
     setSubmitted(true);
@@ -307,7 +324,12 @@ export function QuizComponent({
     const showFeedback = finalResult !== null && selectedAnswer !== null;
     const revealCorrect =
       showFeedback && !finalResult && attempts >= maxAttempts && correctIndex !== null && selectedAnswer !== correctIndex;
-    const canSubmit = !autoSubmit && !isAnswered && selectedAnswer !== null && attempts < maxAttempts;
+    const canSubmit =
+      !autoSubmit &&
+      !isAnswered &&
+      selectedAnswer !== null &&
+      attempts < maxAttempts &&
+      !(quiz.bundleId?.startsWith('lesson-4'));
     const timePercent =
       showTimer && timeLeft !== null && quiz.timeLimitSeconds
         ? Math.max(0, Math.min(100, (timeLeft / quiz.timeLimitSeconds) * 100))
@@ -322,10 +344,10 @@ export function QuizComponent({
           </h3>
           {quiz.promptWord && (
             <div className="flex justify-center mb-3">
-              <div className="inline-flex flex-wrap items-center justify-center gap-3 text-lg bg-purple-50 border border-purple-200 rounded-xl px-3 py-2 shadow-sm">
-                <span className="font-semibold text-gray-800">{quiz.promptWord}</span>
+              <div className="flex flex-wrap items-center justify-center gap-3 text-lg px-2 py-1">
+                <span className="font-semibold text-gray-800 arabic-text text-3xl">{quiz.promptWord}</span>
                 {quiz.promptMeaning && (
-                  <span className="text-sm text-gray-700 bg-white rounded-lg px-3 py-1 shadow-inner">
+                  <span className="text-sm text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-1 shadow-inner">
                     {quiz.promptMeaning[language]}
                   </span>
                 )}
@@ -339,6 +361,11 @@ export function QuizComponent({
                   </Button>
                 )}
               </div>
+            </div>
+          )}
+          {quiz.promptLetters && (
+            <div className="flex justify-center mb-3">
+              {renderLetterAudioButtons(quiz.promptLetters.text, quiz.promptLetters.audioIds)}
             </div>
           )}
           {hasAudioButton && (
@@ -384,6 +411,7 @@ export function QuizComponent({
             const isUserChoice = selectedAnswer === optionIndex;
             const isCorrectChoice = correctIndex === optionIndex;
             const shouldShowCorrect = revealCorrect && isCorrectChoice;
+            const hasLetterAudio = option.audioIds && option.audioIds.length > 0;
             
             return (
               <button
@@ -406,7 +434,9 @@ export function QuizComponent({
               >
                 <div className="flex items-center justify-between">
                   <span className="text-lg flex items-center gap-2">
-                    {renderTextWithArabic(optionText)}
+                    {hasLetterAudio
+                      ? renderLetterAudioButtons(optionText, option.audioIds)
+                      : renderTextWithArabic(optionText)}
                   </span>
                   {showFeedback && isUserChoice && (
                     finalResult ? (
@@ -465,7 +495,7 @@ export function QuizComponent({
   }
 
   if (quiz.type === 'drag-drop') {
-    return <DragDropQuiz quiz={quiz} language={language} onAnswer={onAnswer} />;
+    return <DragDropQuiz quiz={quiz} language={language} onAnswer={onAnswer} isAnswered={isAnswered} />;
   }
 
   if (quiz.type === 'order-sequence') {
@@ -476,9 +506,15 @@ export function QuizComponent({
 }
 
 // Drag and Drop Quiz Component
-function DragDropQuiz({ quiz, language, onAnswer }: QuizComponentProps) {
+function DragDropQuiz({ quiz, language, onAnswer, isAnswered = false }: QuizComponentProps) {
   const [pairs, setPairs] = useState<{ sourceId: string; targetId: string }[]>([]);
   const [submitted, setSubmitted] = useState(false);
+  const isLesson4WordBuild = quiz.bundleId?.startsWith('lesson-4') && quiz.id.includes('-q2');
+  useEffect(() => {
+    if (isAnswered && !submitted) {
+      setSubmitted(true);
+    }
+  }, [isAnswered, submitted]);
   
   // Shuffle sources on mount so they're not in the same order as answers
   const [shuffledSources] = useState(() => {
@@ -491,6 +527,7 @@ function DragDropQuiz({ quiz, language, onAnswer }: QuizComponentProps) {
   const targets = quiz.items?.filter(
     item => item.id.startsWith('letter-')
   ) || [];
+  const displayedTargets = isLesson4WordBuild ? [...targets].reverse() : targets;
 
   const handleDrop = (sourceId: string, targetId: string) => {
     setPairs(currentPairs => {
@@ -524,44 +561,95 @@ function DragDropQuiz({ quiz, language, onAnswer }: QuizComponentProps) {
     <DndProvider backend={HTML5Backend}>
       <div className="space-y-6">
         <h3 className="text-2xl text-center mb-6">{quiz.question[language]}</h3>
+        {isLesson4WordBuild && quiz.promptWord && (
+          <div className="text-center mb-2 space-y-1">
+            <div className="arabic-text text-4xl md:text-5xl flex justify-center">{quiz.promptWord}</div>
+            <p className="text-sm text-gray-600">
+              {language === 'tr'
+                ? 'Harfleri sağdan sola yerleştirmeyi unutma.'
+                : 'Plaats de letters van rechts naar links.'}
+            </p>
+          </div>
+        )}
         
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Sources */}
-          <div className="space-y-3">
-            <h4 className="text-center mb-4">{language === 'tr' ? 'Harfler' : 'Letters'}</h4>
-            {shuffledSources.map(source => {
-              const pairedWith = getSourceStatus(source.id);
-              return (
-                <DraggableItem 
-                  key={source.id} 
-                  item={source} 
+        {isLesson4WordBuild ? (
+          <div className="space-y-4 max-w-3xl mx-auto">
+            <div className="flex justify-center gap-3 flex-wrap">
+              {shuffledSources.map(source => {
+                const pairedWith = getSourceStatus(source.id);
+                return (
+                  <DraggableItem
+                    key={source.id}
+                    item={source}
+                    language={language}
+                    isPaired={!!pairedWith}
+                    submitted={submitted}
+                    disableAudio={isLesson4WordBuild}
+                    sizeLarge={isLesson4WordBuild}
+                    locked={isAnswered}
+                  />
+                );
+              })}
+            </div>
+            <div className="flex justify-center gap-3 flex-wrap">
+              {displayedTargets.map(target => (
+                <DropTarget
+                  key={target.id}
+                  target={target}
                   language={language}
-                  isPaired={!!pairedWith}
+                  onDrop={handleDrop}
+                  matched={pairs.find(p => p.targetId === target.id)}
+                  matchedSource={shuffledSources.find(s => s.id === pairs.find(p => p.targetId === target.id)?.sourceId)}
                   submitted={submitted}
+                  correctPair={quiz.correctPairs?.find(cp => cp.targetId === target.id)}
+                  sizeLarge={isLesson4WordBuild}
+                  locked={isAnswered}
                 />
-              );
-            })}
+              ))}
+            </div>
           </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Sources */}
+            <div className="space-y-3">
+              <h4 className="text-center mb-4">{language === 'tr' ? 'Kelimeler' : 'Woorden'}</h4>
+              {shuffledSources.map(source => {
+                const pairedWith = getSourceStatus(source.id);
+                return (
+                  <DraggableItem 
+                    key={source.id} 
+                    item={source} 
+                    language={language}
+                    isPaired={!!pairedWith}
+                    submitted={submitted}
+                    disableAudio={false}
+                    locked={isAnswered}
+                  />
+                );
+              })}
+            </div>
 
-          {/* Targets */}
-          <div className="space-y-3">
-            <h4 className="text-center mb-4">{language === 'tr' ? 'Sesler' : 'Geluiden'}</h4>
-            {targets.map(target => (
-              <DropTarget 
-                key={target.id} 
-                target={target} 
-                language={language} 
-                onDrop={handleDrop}
-                matched={pairs.find(p => p.targetId === target.id)}
-                matchedSource={shuffledSources.find(s => s.id === pairs.find(p => p.targetId === target.id)?.sourceId)}
-                submitted={submitted}
-                correctPair={quiz.correctPairs?.find(cp => cp.targetId === target.id)}
-              />
-            ))}
+            {/* Targets */}
+            <div className="space-y-3">
+              <h4 className="text-center mb-4">{language === 'tr' ? 'Harfler' : 'Letters'}</h4>
+              {targets.map(target => (
+                <DropTarget 
+                  key={target.id} 
+                  target={target} 
+                  language={language} 
+                  onDrop={handleDrop}
+                  matched={pairs.find(p => p.targetId === target.id)}
+                  matchedSource={shuffledSources.find(s => s.id === pairs.find(p => p.targetId === target.id)?.sourceId)}
+                  submitted={submitted}
+                  correctPair={quiz.correctPairs?.find(cp => cp.targetId === target.id)}
+                  locked={isAnswered}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {!submitted && (
+        {!submitted && !isAnswered && (
           <div className="text-center">
             <Button
               onClick={handleSubmit}
@@ -594,26 +682,41 @@ function DraggableItem({
   item, 
   language, 
   isPaired,
-  submitted 
+  submitted,
+  disableAudio,
+  sizeLarge = false,
+  locked = false
 }: { 
   item: any; 
   language: 'tr' | 'nl';
   isPaired: boolean;
   submitted: boolean;
+  disableAudio: boolean;
+  sizeLarge?: boolean;
+  locked?: boolean;
 }) {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'ITEM',
     item: { id: item.id },
-    canDrag: !submitted,
+    canDrag: !submitted && !locked,
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-  }), [submitted]);
+  }), [submitted, locked]);
+
+  const containerClass = sizeLarge ? 'p-6 min-h-[220px]' : 'p-3 min-h-[90px]';
+  const itemText = item.content[language];
+  const isArabic = isArabicText(itemText);
+  const letterSize = sizeLarge
+    ? 'text-9xl leading-none'
+    : isArabic
+    ? 'text-7xl leading-none'
+    : 'text-lg';
 
   return (
     <div
       ref={drag}
-              className={`p-4 border-2 rounded-xl transition-all shadow-sm ${
+      className={`${containerClass} border-2 rounded-xl transition-all shadow-sm ${
         submitted
           ? 'bg-gray-100 border-gray-300 cursor-not-allowed'
           : isDragging
@@ -622,8 +725,8 @@ function DraggableItem({
       } ${isPaired && !submitted ? 'border-purple-500 bg-purple-100' : ''}`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-lg">{item.content[language]}</span>
-        {item.audioId && !submitted && (
+        <span className={`text-lg arabic-text ${letterSize}`}>{item.content[language]}</span>
+        {item.audioId && !submitted && !disableAudio && (
           <Button
             size="sm"
             variant="ghost"
@@ -648,7 +751,9 @@ function DropTarget({
   matched, 
   matchedSource,
   submitted,
-  correctPair 
+  correctPair,
+  sizeLarge = false,
+  locked = false
 }: { 
   target: any; 
   language: 'tr' | 'nl'; 
@@ -657,25 +762,40 @@ function DropTarget({
   matchedSource?: any;
   submitted: boolean;
   correctPair?: { sourceId: string; targetId: string };
+  sizeLarge?: boolean;
+  locked?: boolean;
 }) {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'ITEM',
     drop: (item: { id: string }) => {
       onDrop(item.id, target.id);
     },
-    canDrop: () => !submitted,
+    canDrop: () => !submitted && !locked,
     collect: (monitor) => ({
       isOver: monitor.isOver(),
     }),
-  }), [submitted, target.id]);
+  }), [submitted, locked, target.id]);
 
   const isCorrect = submitted && matched && correctPair && matched.sourceId === correctPair.sourceId;
   const isIncorrect = submitted && matched && correctPair && matched.sourceId !== correctPair.sourceId;
+  const containerClass = sizeLarge ? 'p-6 min-h-[220px]' : 'p-3 min-h-[90px]';
+  const targetText = target.content[language];
+  const matchedSourceText = matchedSource?.content?.[language];
+  const isArabicTarget = isArabicText(targetText);
+  const isArabicMatchedSource = isArabicText(matchedSourceText);
+  const matchedSize = sizeLarge
+    ? 'arabic-text text-8xl leading-none'
+    : isArabicMatchedSource
+    ? 'arabic-text text-7xl leading-none'
+    : 'text-lg';
+  const targetLabelClass = isArabicTarget
+    ? 'arabic-text text-7xl leading-none text-purple-700'
+    : 'text-sm font-semibold text-purple-700';
 
   return (
     <div
       ref={drop}
-      className={`p-4 border-2 rounded-xl min-h-[100px] transition-all shadow-sm ${
+      className={`${containerClass} border-2 rounded-xl transition-all shadow-sm ${
         isOver && !submitted
           ? 'border-purple-500 bg-purple-100 scale-105'
           : submitted
@@ -689,19 +809,23 @@ function DropTarget({
           : 'border-dashed border-gray-400 bg-gray-50'
       }`}
     >
-      <div className="text-sm font-semibold mb-2 text-purple-700 arabic-text text-xl">
-        {target.content[language]}
-      </div>
+      {!sizeLarge && (
+        <div className={`${targetLabelClass} mb-2 ${isArabicTarget ? '' : 'text-center'}`}>
+          {targetText}
+        </div>
+      )}
       {matched && matchedSource && (
-        <div className={`mt-2 p-3 rounded-lg ${
+        <div className={`p-3 rounded-lg ${
           submitted
             ? isCorrect
               ? 'bg-green-200 border-2 border-green-400'
               : 'bg-red-200 border-2 border-red-400'
             : 'bg-white border-2 border-purple-300'
         }`}>
-          <div className="flex items-center justify-between">
-            <span>{matchedSource.content[language]}</span>
+          <div className="flex items-center justify-center">
+            <span className={matchedSize}>
+              {matchedSourceText}
+            </span>
             {submitted && (
               isCorrect ? (
                 <Check className="text-green-700" size={20} />
