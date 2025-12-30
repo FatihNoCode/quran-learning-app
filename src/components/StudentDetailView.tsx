@@ -165,9 +165,7 @@ export function StudentDetailView({ studentId, accessToken, language, onBack }: 
     .sort((a, b) => b[1].level - a[1].level)
     .slice(0, 5);
 
-  const dueReviewItems = (progress.reviewQueue || []).filter(
-    item => new Date(item.nextReviewDate) <= new Date()
-  );
+  const reviewQueueCount = (progress.reviewQueue || []).length;
 
   const getLevelColor = (level: number) => {
     if (level === 0) return 'bg-gray-400';
@@ -257,7 +255,7 @@ export function StudentDetailView({ studentId, accessToken, language, onBack }: 
             <Clock className="text-pink-600" size={20} />
             <p className="text-sm text-gray-600">{t.itemsDue}</p>
           </div>
-          <p className="text-2xl text-pink-800">{dueReviewItems.length}</p>
+          <p className="text-2xl text-pink-800">{reviewQueueCount}</p>
         </Card>
       </div>
 

@@ -18,7 +18,7 @@ import StarIcon from './icons/StarIcon';
 import BadgeIcon from './icons/BadgeIcon';
 import FlameIcon from './icons/FlameIcon';
 import GrowthIcon from './icons/GrowthIcon';
-import { StudentProgress, Badge, getDueReviewItems, updateStreak } from '../utils/masterySystem';
+import { StudentProgress, Badge, updateStreak, updateReviewQueue } from '../utils/masterySystem';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { toast } from 'sonner@2.0.3';
 import homeIcon from 'figma:asset/b064a1b5a53d37f1101ede8d5dc76112da50bd5a.png';
@@ -207,7 +207,21 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
     }
   };
 
-  const handleLessonComplete = async (updatedProgress: StudentProgress, earnedBadges: Badge[]) => {
+  const applyWrongQuestionsToQueue = (
+    currentQueue: any[],
+    wrongQuestions: { questionId: string; skillId: string }[]
+  ) => {
+    return wrongQuestions.reduce((queue, item) => {
+      if (!item.questionId || !item.skillId) return queue;
+      return updateReviewQueue(queue, item.questionId, item.skillId, false);
+    }, currentQueue || []);
+  };
+
+  const handleLessonComplete = async (
+    updatedProgress: StudentProgress,
+    earnedBadges: Badge[],
+    result?: { wrongQuestions: { questionId: string; skillId: string }[] }
+  ) => {
     if (!progress) return;
 
     const normalized: StudentProgress = {
@@ -216,6 +230,10 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
       currentLessonOrder: Math.max(
         progress.currentLessonOrder || 1,
         updatedProgress.currentLessonOrder || 1
+      ),
+      reviewQueue: applyWrongQuestionsToQueue(
+        updatedProgress.reviewQueue || progress.reviewQueue || [],
+        result?.wrongQuestions || []
       )
     };
 
@@ -270,6 +288,11 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
     );
   }
 
+  const reviewQueueCount = (progress.reviewQueue || []).length;
+  const totalLessons = notionLessons.length;
+  const completedLessons = progress.completedLessons.length;
+  const progressPercentage = (completedLessons / totalLessons) * 100;
+
   // Lessons overview
   if (currentView === 'lessons') {
     const lessonCards = notionLessons
@@ -304,16 +327,35 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
           </div>
         </div>
 
-        <div className="space-y-2">
-          <h2 className="text-2xl font-semibold">
-            {language === 'tr' ? 'Dersler' : 'Lessen'}
-          </h2>
-          <p className="text-gray-600">
-            {language === 'tr'
-              ? 'Tamamladığın dersleri gözden geçir veya yeni derslere başla.'
-              : 'Bekijk afgeronde lessen of start een nieuwe les.'}
-          </p>
-        </div>
+        <h2 className="text-2xl font-semibold">
+          {language === 'tr' ? 'Dersler' : 'Lessen'}
+        </h2>
+
+        {/* Overall Progress on lessons page */}
+        <Card className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border p-6">
+          <h3 className="text-xl">
+            {language === 'tr' ? 'Genel İlerleme' : 'Totale Voortgang'}
+          </h3>
+          <div className="flex items-center justify-between text-sm">
+            <span>{completedLessons} / {totalLessons} {language === 'tr' ? 'ders tamamlandı' : 'lessen voltooid'}</span>
+            <span>{Math.round(progressPercentage)}%</span>
+          </div>
+          <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+            <div
+              className="h-3 rounded-full transition-all duration-500"
+              style={{
+                width: `${progressPercentage}%`,
+                background: 'linear-gradient(90deg, #a855f7, #ec4899, #f59e0b, #10b981)'
+              }}
+            />
+          </div>
+        </Card>
+
+        <p className="text-gray-600">
+          {language === 'tr'
+            ? 'Tamamladığın dersleri gözden geçir veya yeni derslere başla.'
+            : 'Bekijk afgeronde lessen of start een nieuwe les.'}
+        </p>
 
         <div className="grid md:grid-cols-3 gap-4">
           {lessonCards.map(lesson => {
@@ -395,7 +437,7 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
             setSelectedLessonOrder(null);
             setCurrentView(goBackTo);
           }}
-          onComplete={() => {
+          onComplete={(result) => {
             const updatedProgress: StudentProgress = {
               ...progress,
               currentLessonOrder: Math.max(progress.currentLessonOrder, targetLessonOrder + 1),
@@ -407,7 +449,7 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
                 lastActive: new Date().toISOString()
               }
             };
-            handleLessonComplete(updatedProgress, []);
+            handleLessonComplete(updatedProgress, [], result);
           }}
         />
       );
@@ -479,11 +521,6 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
     currentLessonTitle = currentLesson?.title[language] || '';
   }
   
-  const dueReviewItems = getDueReviewItems(progress.reviewQueue);
-  const totalLessons = notionLessons.length;
-  const completedLessons = progress.completedLessons.length;
-  const progressPercentage = (completedLessons / totalLessons) * 100;
-
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header Stats */}
@@ -537,26 +574,6 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
         </Card>
       </div>
 
-{/* Overall Progress */}
-      <Card className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border p-6">
-        <h3 className="text-xl">
-          {language === 'tr' ? 'Genel İlerleme' : 'Totale Voortgang'}
-        </h3>
-        <div className="flex items-center justify-between text-sm">
-          <span>{completedLessons} / {totalLessons} {language === 'tr' ? 'ders tamamlandı' : 'lessen voltooid'}</span>
-          <span>{Math.round(progressPercentage)}%</span>
-        </div>
-        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-          <div
-            className="h-3 rounded-full transition-all duration-500"
-            style={{
-              width: `${progressPercentage}%`,
-              background: 'linear-gradient(90deg, #a855f7, #ec4899, #f59e0b, #10b981)'
-            }}
-          />
-        </div>
-      </Card>
-
       {/* Action Buttons */}
       <div className="grid md:grid-cols-3 gap-4">
         <Card
@@ -581,12 +598,12 @@ export default function NewStudentDashboard({ context, onViewChange, onLogout, p
           <div className="flex flex-col items-center text-center gap-3">
             <ProgressIcon className="text-blue-600" size={48} />
             <h3 className="text-xl">
-              {language === 'tr' ? 'Zayıf Alanları Geliştir' : 'Oefen Zwakke Punten'}
+              {language === 'tr' ? 'Tekrar edilecek sorular' : 'Vragen voor herhaling'}
             </h3>
             <p className="text-sm text-gray-600">
               {language === 'tr' 
-                ? `${dueReviewItems.length} soru hazır` 
-                : `${dueReviewItems.length} vragen klaar`
+                ? `${reviewQueueCount} soru tekrar kuyruğunda` 
+                : `${reviewQueueCount} vragen in de herhaalwachtrij`
               }
             </p>
           </div>

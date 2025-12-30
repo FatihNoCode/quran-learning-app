@@ -252,7 +252,7 @@ export function updateReviewQueue(
       incorrectStreak = existingItem.incorrectStreak + 1;
       // Increase difficulty and reset interval
       difficulty = Math.min(existingItem.difficulty + 2, 10);
-      reviewInterval = 1;
+      reviewInterval = 0; // due immediately after a wrong first attempt
     }
   } else {
     // New item
@@ -261,7 +261,7 @@ export function updateReviewQueue(
       reviewInterval = 2;
     } else {
       incorrectStreak = 1;
-      reviewInterval = 1;
+      reviewInterval = 0; // due immediately when first attempt is wrong
     }
   }
   
@@ -280,8 +280,8 @@ export function updateReviewQueue(
   // Remove old item and add updated one
   const filteredQueue = currentQueue.filter(item => item.questionId !== questionId);
   
-  // Only add to queue if not mastered (less than 3 correct in a row)
-  if (correctStreak < 3) {
+  // Only add to queue if not mastered (less than 2 correct in a row)
+  if (correctStreak < 2) {
     filteredQueue.push(updatedItem);
   }
   

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { placeholderLessons } from '../data/placeholderLessons';
+import { lessons as notionLessons } from '../data/notionLessons';
 import { QuizComponent } from './QuizComponent';
 import { filterValidQuizzes } from '../utils/quizFilters';
 import { Button } from './ui/button';
@@ -30,21 +31,24 @@ export function PracticeWeakAreas({ progress, language, onComplete, onBack }: Pr
   const weakSkillIds = getWeakSkills(progress.skillMastery || {}, progress.reviewQueue || []);
   const dueReviewItems = getDueReviewItems(progress.reviewQueue || []);
   
-  // Find quizzes for weak skills or due review, and filter valid ones
-  const practiceQuizzes = placeholderLessons
-    .flatMap(lesson => filterValidQuizzes(lesson.quizzes))
-    .filter(quiz => {
-      // Include if skill is weak
-      if (weakSkillIds.includes(quiz.skill)) return true;
-      
-      // Include if quiz is due for review
-      if (dueReviewItems.some(item => item.questionId === quiz.id)) return true;
-      
-      return false;
-    })
-    .slice(0, 10); // Limit to 10 questions
+  // Build practice set strictly from repeat queue items (unique questions)
+  const allQuizzes = useMemo(
+    () => [...placeholderLessons, ...notionLessons].flatMap(lesson => filterValidQuizzes(lesson.quizzes)),
+    []
+  );
+  const initialQuestionIds = useMemo(
+    () => Array.from(new Set((progress.reviewQueue || []).map(item => item.questionId))),
+    [progress.reviewQueue]
+  );
+  const [questionIds, setQuestionIds] = useState<string[]>(initialQuestionIds);
+  const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(initialQuestionIds[0] || null);
+  const [previousQuestionId, setPreviousQuestionId] = useState<string | null>(null);
 
-  const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
+  const findQuizById = (id: string | null) => allQuizzes.find(q => q.id === id);
+  const practiceQuizzes = questionIds
+    .map(id => findQuizById(id))
+    .filter((q): q is NonNullable<typeof q> => Boolean(q));
+
   const [quizResults, setQuizResults] = useState<boolean[]>([]);
   const [correctAnswerStreak, setCorrectAnswerStreak] = useState(0);
   const [updatedProgress, setUpdatedProgress] = useState<StudentProgress>(progress);
@@ -74,12 +78,14 @@ export function PracticeWeakAreas({ progress, language, onComplete, onBack }: Pr
     );
   }
 
-  const currentQuiz = practiceQuizzes[currentQuizIndex];
-  const totalQuizzes = practiceQuizzes.length;
-  const quizzesCompleted = quizResults.length;
-  const progressPercentage = (quizzesCompleted / totalQuizzes) * 100;
+  const currentQuiz = findQuizById(currentQuestionId || practiceQuizzes[0]?.id || null);
+  const totalQuizzes = questionIds.length;
+  const quizzesCompleted = totalQuizzes > 0 ? totalQuizzes - questionIds.length : 0;
+  const progressPercentage = totalQuizzes > 0 ? ((initialQuestionIds.length - questionIds.length) / initialQuestionIds.length) * 100 : 0;
 
-  const handleQuizAnswer = (isCorrect: boolean) => {
+  const handleQuizAnswer = (isCorrect: boolean, _selectedIndex?: number | null, _attemptNumber?: number, _hadFirstAttemptWrong?: boolean) => {
+    if (!currentQuiz) return;
+
     // Update quiz results
     const newResults = [...quizResults, isCorrect];
     setQuizResults(newResults);
@@ -133,16 +139,24 @@ export function PracticeWeakAreas({ progress, language, onComplete, onBack }: Pr
       newProgress.badges = [...newProgress.badges, ...newBadges];
     }
 
-    // Move to next quiz or complete
-    if (currentQuizIndex < totalQuizzes - 1) {
-      setTimeout(() => {
-        setCurrentQuizIndex(currentQuizIndex + 1);
-      }, 2000);
-    } else {
-      setTimeout(() => {
-        setIsComplete(true);
-      }, 2000);
+    // Determine next questions set, avoiding back-to-back repeats when possible
+    const newIds = Array.from(new Set(newReviewQueue.map(item => item.questionId)));
+    setQuestionIds(newIds);
+
+    if (newIds.length === 0) {
+      setTimeout(() => setIsComplete(true), 200);
+      return;
     }
+
+    let nextId: string | null = null;
+    if (newIds.length === 1) {
+      nextId = newIds[0];
+    } else {
+      nextId = newIds.find(id => id !== currentQuiz.id) || newIds[0];
+    }
+
+    setPreviousQuestionId(currentQuiz.id);
+    setCurrentQuestionId(nextId);
   };
 
   const handleComplete = () => {
@@ -247,7 +261,7 @@ export function PracticeWeakAreas({ progress, language, onComplete, onBack }: Pr
             <div className="flex items-center gap-2">
               <ProgressIcon className="text-purple-500" size={28} />
               <h2 className="text-2xl">
-                {language === 'tr' ? 'Zayıf Alanları Geliştir' : 'Oefen Zwakke Punten'}
+                {language === 'tr' ? 'Tekrar edilecek sorular' : 'Vragen voor herhaling'}
               </h2>
             </div>
           </div>

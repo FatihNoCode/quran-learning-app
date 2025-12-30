@@ -3,6 +3,7 @@ import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { AppContextType } from '../App';
 import { lessons, getLessonByOrder, getNextLesson, getTotalLessons, getLessonsByLevel } from '../data/notionLessons';
 import NewLessonViewer from './NewLessonViewer';
+import { updateReviewQueue } from '../utils/masterySystem';
 import ReviewSession from './ReviewSession';
 import IslamicTrivia from './IslamicTrivia';
 import { Clock, Brain, RotateCcw, AlertTriangle } from 'lucide-react';
@@ -160,7 +161,17 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
     }
   };
 
-  const handleLessonComplete = () => {
+  const applyWrongQuestionsToQueue = (
+    currentQueue: any[],
+    wrongQuestions: { questionId: string; skillId: string }[]
+  ) => {
+    return wrongQuestions.reduce((queue, item) => {
+      if (!item.questionId || !item.skillId) return queue;
+      return updateReviewQueue(queue, item.questionId, item.skillId, false);
+    }, currentQueue || []);
+  };
+
+  const handleLessonComplete = (result?: { wrongQuestions: { questionId: string; skillId: string }[] }) => {
     if (!progress) return;
 
     // Get current lesson from new system
@@ -174,7 +185,8 @@ export default function StudentDashboard({ context }: StudentDashboardProps) {
 
     let updates: Partial<Progress> = {
       completedLessons,
-      currentLessonOrder: nextLessonOrder
+      currentLessonOrder: nextLessonOrder,
+      reviewQueue: applyWrongQuestionsToQueue(progress.reviewQueue, result?.wrongQuestions || [])
     };
 
     // Add to review items (spaced repetition)

@@ -79,8 +79,8 @@ export function StudentProfile({ progress, language, onClose, userId, accessToke
       reviewQueue: 'Tekrar Kuyruğu',
       questionsToReview: 'Tekrar edilecek soru',
       resetProgress: 'İlerlemeyi Sıfırla',
-      confirmReset: 'Tüm ilerlemenizi sıfırlamak istediğinizden emin misiniz?',
-      resetWarning: '⚠️ Bu işlem geri alınamaz! Tüm derslerin, puanların, rozetlerin ve istatistiklerin silinecek ve baştan başlayacaksınız.',
+      confirmReset: 'Ders ilerlemenizi ve zayıf noktalarınızı sıfırlamak istediğinizden emin misiniz?',
+      resetWarning: '⚠️ Bu işlem geri alınamaz! Ders tamamlamaları ve tekrar kuyruğunuz temizlenecek. Puanlar, rozetler ve seriler korunur.',
       cancel: 'İptal',
       reset: 'Sıfırla',
       logout: 'Çıkış Yap'
@@ -102,8 +102,8 @@ export function StudentProfile({ progress, language, onClose, userId, accessToke
       reviewQueue: 'Herhaling Wachtrij',
       questionsToReview: 'Vragen om te herhalen',
       resetProgress: 'Voortgang Resetten',
-      confirmReset: 'Weet je zeker dat je al je voortgang wilt resetten?',
-      resetWarning: '⚠️ Deze actie kan niet ongedaan worden gemaakt! Al je lessen, punten, badges en statistieken worden gewist en je begint opnieuw.',
+      confirmReset: 'Weet je zeker dat je je lesvoortgang en herhaal-queue wilt resetten?',
+      resetWarning: '⚠️ Deze actie kan niet ongedaan worden gemaakt! Lesvoltooiingen en herhaal-queue worden geleegd. Punten, badges en streaks blijven behouden.',
       cancel: 'Annuleren',
       reset: 'Reset',
       logout: 'Uitloggen'
@@ -305,7 +305,7 @@ export function StudentProfile({ progress, language, onClose, userId, accessToke
               {t.reviewQueue}
             </h3>
             <div className="text-center py-4">
-              <div className="text-4xl mb-2">{progress.reviewQueue.length}</div>
+              <div className="text-4xl mb-2">{(progress.reviewQueue || []).length}</div>
               <div className="text-gray-600">
                 {t.questionsToReview}
               </div>
@@ -319,8 +319,8 @@ export function StudentProfile({ progress, language, onClose, userId, accessToke
             </h3>
             <p className="text-sm text-red-700 mb-4 text-center">
               {language === 'tr' 
-                ? 'Bu işlem tüm ilerlemenizi sıfırlayacak ve baştan başlamanıza neden olacaktır.' 
-                : 'Deze actie zal al je voortgang resetten en je opnieuw laten beginnen.'
+                ? 'Bu işlem ders ilerlemenizi ve tekrar kuyruğunuzu sıfırlar. Puanlar, rozetler ve seriler korunur.' 
+                : 'Deze actie reset je lesvoortgang en herhaalwachtrij. Punten, badges en streaks blijven behouden.'
               }
             </p>
             <div className="flex justify-center">

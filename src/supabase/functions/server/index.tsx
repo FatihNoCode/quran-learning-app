@@ -463,19 +463,22 @@ app.post("/make-server-33549613/students/:userId/reset-progress", async (c) => {
       return c.json({ error: "Student not found" }, 404);
     }
 
-    // Reset progress to initial state
+    // Reset lesson progress and weak points, but preserve points/badges/streaks
     const resetProgress = {
-      userId: currentProgress.userId,
-      username: currentProgress.username,
-      name: currentProgress.name,
+      ...currentProgress,
       currentLevel: 'letters',
       currentLessonIndex: 0,
       currentLessonOrder: 1, // Reset to lesson 1 in new system
       completedLessons: [],
-      reviewItems: [], // Clear weak points
+      reviewItems: [], // legacy
+      reviewQueue: [],
+      review_queue: [],
+      skillMastery: {},
+      skill_mastery: {},
       lastActive: new Date().toISOString(),
       resetCount: (currentProgress.resetCount || 0) + 1,
       lastResetDate: new Date().toISOString()
+      // totalPoints, badges, stats preserved via spread
     };
 
     await kv.set(`progress:${userId}`, resetProgress);
@@ -520,18 +523,17 @@ app.post("/make-server-33549613/students/:userId/reset-to-lesson", async (c) => 
     }
 
     // Reset progress to selected lesson
-    // Remove all lessons from completed that have order >= lessonOrder
-    const completedLessons = currentProgress.completedLessons || [];
-    
-    // We need to filter out lessons based on their order number
-    // Since we don't have easy access to the lesson order from ID, we'll just clear all progress after the selected lesson
     const resetProgress = {
       ...currentProgress,
       currentLessonOrder: lessonOrder,
-      // Keep completed lessons that were before the reset point
-      completedLessons: [], // For simplicity, clear all - student can review
-      reviewItems: [], // Clear review items
+      completedLessons: [], // Clear lesson completions
+      skillMastery: {}, // Clear mastery so lessons can be retaken
+      skill_mastery: {}, // Normalize legacy key
+      reviewQueue: [], // Clear repeat/weak-point queue
+      review_queue: [], // Normalize legacy key
+      reviewItems: [], // Legacy field safety
       lastActive: new Date().toISOString()
+      // Preserve totalPoints, badges, and streak stats
     };
 
     await kv.set(`progress:${userId}`, resetProgress);

@@ -12,7 +12,9 @@ const isArabicText = (text?: string) => !!text && ARABIC_REGEX.test(text);
 interface QuizComponentProps {
   quiz: Quiz;
   language: 'tr' | 'nl';
-  onAnswer: (isCorrect: boolean, selectedIndex?: number | null) => void;
+  // attemptNumber is 1-based attempt count when the answer was submitted
+  // hadFirstAttemptWrong flags if the first try was incorrect (even if later corrected)
+  onAnswer: (isCorrect: boolean, selectedIndex?: number | null, attemptNumber?: number, hadFirstAttemptWrong?: boolean) => void;
   isAnswered?: boolean; // Whether this question was already answered
   initialChoice?: number | null; // Persisted answer index
   answerResult?: boolean | null; // Persisted correctness
@@ -29,6 +31,7 @@ export function QuizComponent({
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(initialChoice);
   const [submitted, setSubmitted] = useState<boolean>(answerResult !== null);
   const [attempts, setAttempts] = useState(initialChoice !== null ? 1 : 0);
+  const [hadFirstAttemptWrong, setHadFirstAttemptWrong] = useState(false);
   const [optionOrder, setOptionOrder] = useState<number[]>([]);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -59,6 +62,7 @@ export function QuizComponent({
   useEffect(() => {
     setSelectedAnswer(initialChoice);
     setSubmitted(answerResult !== null);
+    setHadFirstAttemptWrong(false);
     if (answerResult === false) {
       setAttempts(maxAttempts);
     } else if (initialChoice !== null) {
@@ -205,9 +209,9 @@ export function QuizComponent({
     setSubmitted(true);
     clearTimers();
     if (isCorrectSelection && attemptNumber === 1) {
-      setTimeout(() => onAnswer(isCorrectSelection, choice), 2000);
+      setTimeout(() => onAnswer(isCorrectSelection, choice, attemptNumber, hadFirstAttemptWrong), 2000);
     } else {
-      onAnswer(isCorrectSelection, choice);
+      onAnswer(isCorrectSelection, choice, attemptNumber, hadFirstAttemptWrong);
     }
   };
 
@@ -220,6 +224,9 @@ export function QuizComponent({
       const nextAttempts = attempts + 1;
       setAttempts(nextAttempts);
       const isCorrectSelection = correctIndex !== null ? answer === correctIndex : false;
+      if (nextAttempts === 1 && !isCorrectSelection) {
+        setHadFirstAttemptWrong(true);
+      }
 
       if (isCorrectSelection) {
         markAnswered(true, answer, nextAttempts);
@@ -246,12 +253,15 @@ export function QuizComponent({
     setAttempts(nextAttempts);
     const isCorrect = correctIndex !== null ? selectedAnswer === correctIndex : false;
     setSubmitted(true);
+    if (nextAttempts === 1 && !isCorrect) {
+      setHadFirstAttemptWrong(true);
+    }
     
     if (isCorrect || nextAttempts >= maxAttempts) {
       if (isCorrect && nextAttempts === 1) {
-        setTimeout(() => onAnswer(isCorrect, selectedAnswer), 2000);
+        setTimeout(() => onAnswer(isCorrect, selectedAnswer, nextAttempts, hadFirstAttemptWrong), 2000);
       } else {
-        onAnswer(isCorrect, selectedAnswer);
+        onAnswer(isCorrect, selectedAnswer, nextAttempts, hadFirstAttemptWrong);
       }
     } else {
       setTimeout(() => {

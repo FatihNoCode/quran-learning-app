@@ -9,7 +9,7 @@ import { Button } from './ui/button';
 interface NewLessonViewerProps {
   lesson: Lesson;
   language: 'tr' | 'nl';
-  onComplete: () => void;
+  onComplete: (result?: { wrongQuestions: { questionId: string; skillId: string }[] }) => void;
   onBack: () => void;
 }
 
@@ -113,6 +113,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
   const [currentBundleIndex, setCurrentBundleIndex] = useState(0);
   type AnswerRecord = { result: boolean | null; choice: number | null };
   const [bundleResults, setBundleResults] = useState<Record<string, AnswerRecord[]>>({});
+  const [wrongFirstAttemptIds, setWrongFirstAttemptIds] = useState<Set<string>>(new Set());
   const [showWarning, setShowWarning] = useState(false);
   const [currentLetterIndex, setCurrentLetterIndex] = useState(0);
   const [viewedLetters, setViewedLetters] = useState<Set<number>>(new Set([0])); // Track viewed letters, start with first
@@ -254,6 +255,36 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
     { end: 'ـو', middle: 'ـو', beginning: 'و', isolated: 'و' },
     { end: 'ـي', middle: 'ـيـ', beginning: 'يـ', isolated: 'ي' }
   ];
+  const lesson5HarakaForms = [
+    { isolated: 'ا', fatha: 'اَ', kasra: 'اِ', damma: 'اُ', audios: { fatha: 'alif fatha', kasra: 'alif kasra', damma: 'alif damma' } },
+    { isolated: 'ب', fatha: 'بَ', kasra: 'بِ', damma: 'بُ', audios: { fatha: 'ba fatha', kasra: 'ba kasra', damma: 'ba damma' } },
+    { isolated: 'ت', fatha: 'تَ', kasra: 'تِ', damma: 'تُ', audios: { fatha: 'ta (neutral) fatha', kasra: 'ta (neutral) kasra', damma: 'ta (neutral) damma' } },
+    { isolated: 'ث', fatha: 'ثَ', kasra: 'ثِ', damma: 'ثُ', audios: { fatha: 'tha fatha', kasra: 'tha kasra', damma: 'tha damma' } },
+    { isolated: 'ج', fatha: 'جَ', kasra: 'جِ', damma: 'جُ', audios: { fatha: 'jim fatha', kasra: 'jim kasra', damma: 'jim damma' } },
+    { isolated: 'ح', fatha: 'حَ', kasra: 'حِ', damma: 'حُ', audios: { fatha: 'ha early fatha', kasra: 'ha early kasra', damma: 'ha early damma' } },
+    { isolated: 'خ', fatha: 'خَ', kasra: 'خِ', damma: 'خُ', audios: { fatha: 'kha fatha', kasra: 'kha kasra', damma: 'kha damma' } },
+    { isolated: 'د', fatha: 'دَ', kasra: 'دِ', damma: 'دُ', audios: { fatha: 'dal fatha', kasra: 'dal kasra', damma: 'dal damma' } },
+    { isolated: 'ذ', fatha: 'ذَ', kasra: 'ذِ', damma: 'ذُ', audios: { fatha: 'dhal fatha', kasra: 'dhal kasra', damma: 'dhal damma' } },
+    { isolated: 'ر', fatha: 'رَ', kasra: 'رِ', damma: 'رُ', audios: { fatha: 'ra fatha', kasra: 'ra kasra', damma: 'ra damma' } },
+    { isolated: 'ز', fatha: 'زَ', kasra: 'زِ', damma: 'زُ', audios: { fatha: 'za fatha', kasra: 'za kasra', damma: 'za damma' } },
+    { isolated: 'س', fatha: 'سَ', kasra: 'سِ', damma: 'سُ', audios: { fatha: 'sin fatha', kasra: 'sin kasra', damma: 'sin damma' } },
+    { isolated: 'ش', fatha: 'شَ', kasra: 'شِ', damma: 'شُ', audios: { fatha: 'shin fatha', kasra: 'shin kasra', damma: 'shin damma' } },
+    { isolated: 'ص', fatha: 'صَ', kasra: 'صِ', damma: 'صُ', audios: { fatha: 'sad fatha', kasra: 'sad kasra', damma: 'sad damma' } },
+    { isolated: 'ض', fatha: 'ضَ', kasra: 'ضِ', damma: 'ضُ', audios: { fatha: 'dad fatha', kasra: 'dad kasra', damma: 'dad damma' } },
+    { isolated: 'ط', fatha: 'طَ', kasra: 'طِ', damma: 'طُ', audios: { fatha: 'ta (heavy) fatha', kasra: 'ta (heavy) kasra', damma: 'ta (heavy) damma' } },
+    { isolated: 'ظ', fatha: 'ظَ', kasra: 'ظِ', damma: 'ظُ', audios: { fatha: 'za heavy fatha', kasra: 'za heavy kasra', damma: 'za heavy damma' } },
+    { isolated: 'ع', fatha: 'عَ', kasra: 'عِ', damma: 'عُ', audios: { fatha: 'ayn fatha', kasra: 'ayn kasra', damma: 'ayn damma' } },
+    { isolated: 'غ', fatha: 'غَ', kasra: 'غِ', damma: 'غُ', audios: { fatha: 'ghayn fatha', kasra: 'ghayn kasra', damma: 'ghayn damma' } },
+    { isolated: 'ف', fatha: 'فَ', kasra: 'فِ', damma: 'فُ', audios: { fatha: 'fa fatha', kasra: 'fa kasra', damma: 'fa damma' } },
+    { isolated: 'ق', fatha: 'قَ', kasra: 'قِ', damma: 'قُ', audios: { fatha: 'qaf fatha', kasra: 'qaf kasra', damma: 'qaf damma' } },
+    { isolated: 'ك', fatha: 'كَ', kasra: 'كِ', damma: 'كُ', audios: { fatha: 'kaf fatha', kasra: 'kaf kasra', damma: 'kaf damma' } },
+    { isolated: 'ل', fatha: 'لَ', kasra: 'لِ', damma: 'لُ', audios: { fatha: 'lam fatha', kasra: 'lam kasra', damma: 'lam damma' } },
+    { isolated: 'م', fatha: 'مَ', kasra: 'مِ', damma: 'مُ', audios: { fatha: 'mim fatha', kasra: 'mim kasra', damma: 'mim damma' } },
+    { isolated: 'ن', fatha: 'نَ', kasra: 'نِ', damma: 'نُ', audios: { fatha: 'nun fatha', kasra: 'nun kasra', damma: 'nun damma' } },
+    { isolated: 'ه', fatha: 'هَ', kasra: 'هِ', damma: 'هُ', audios: { fatha: 'ha later fatha', kasra: 'ha later kasra', damma: 'ha later damma' } },
+    { isolated: 'و', fatha: 'وَ', kasra: 'وِ', damma: 'وُ', audios: { fatha: 'waw fatha', kasra: 'waw kasra', damma: 'waw damma' } },
+    { isolated: 'ي', fatha: 'يَ', kasra: 'يِ', damma: 'يُ', audios: { fatha: 'ya fatha', kasra: 'ya kasra', damma: 'ya damma' } }
+  ];
   const getLetterAudioId = (arabicChar?: string) => {
     if (!arabicChar) return undefined;
     const trimmed = arabicChar.trim();
@@ -303,6 +334,13 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
     }));
   }, [filteredQuizzes, localizedTitle]);
 
+  const quizById = useMemo(() => {
+    const map = new Map<string, Quiz>();
+    filteredQuizzes.forEach(q => map.set(q.id, q));
+    quizBundles.forEach(bundle => bundle.quizzes.forEach(q => map.set(q.id, q)));
+    return map;
+  }, [filteredQuizzes, quizBundles]);
+
   // Prepare bundle results structure
   useEffect(() => {
     if (!quizBundles.length) return;
@@ -347,7 +385,12 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
       const currentRecord = currentBundleResults[currentQuizIndex] || { result: null, choice: null };
       const isCurrentAnswered = currentRecord.result !== null || currentQuiz.scoringDisabled;
 
-      const handleQuizAnswer = (isCorrect: boolean, choice: number | null = null) => {
+      const handleQuizAnswer = (
+        isCorrect: boolean,
+        choice: number | null = null,
+        _attemptNumber?: number,
+        hadFirstAttemptWrong?: boolean
+      ) => {
         const wasAnswered = currentRecord.result !== null;
         const bundleArray = [...currentBundleResults];
         while (bundleArray.length < totalQuizzes) {
@@ -355,6 +398,10 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
         }
         bundleArray[currentQuizIndex] = { result: isCorrect, choice };
         setBundleResults(prev => ({ ...prev, [currentBundle.id]: bundleArray }));
+
+        if (hadFirstAttemptWrong) {
+          setWrongFirstAttemptIds(prev => new Set(prev).add(currentQuiz.id));
+        }
 
         const allAnswered = bundleArray.every((record, idx) => record.result !== null || currentBundle.quizzes[idx]?.scoringDisabled);
 
@@ -582,20 +629,18 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
     if (phase === 'complete') {
       const scoringTotals = quizBundles.reduce(
         (acc, bundle) => {
-          const results = bundleResults[bundle.id] || [];
-          bundle.quizzes.forEach((quiz, idx) => {
+          bundle.quizzes.forEach((quiz) => {
             if (quiz.scoringDisabled) return;
             acc.total += 1;
-            const res = results[idx]?.result;
-            if (res) {
-              acc.correct += 1;
-            }
           });
           return acc;
         },
         { correct: 0, total: 0 }
       );
-      const percentage = scoringTotals.total > 0 ? Math.round((scoringTotals.correct / scoringTotals.total) * 100) : 0;
+
+      const mistakes = wrongFirstAttemptIds.size;
+      const correctCount = Math.max(scoringTotals.total - mistakes, 0);
+      const percentage = scoringTotals.total > 0 ? Math.round((correctCount / scoringTotals.total) * 100) : 0;
       
       return (
         <div className="min-h-screen p-3 flex items-center justify-center" style={{ backgroundColor: '#e6f4ff' }}>
@@ -610,7 +655,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 mb-6">
                 <div className="text-4xl mb-2">{percentage}%</div>
                 <p className="text-gray-700">
-                  {scoringTotals.correct} {t.of} {scoringTotals.total} {language === 'tr' ? 'doÄŸru cevap' : 'goede antwoorden'}
+                  {correctCount} {t.of} {scoringTotals.total} {language === 'tr' ? 'doÄŸru cevap' : 'goede antwoorden'}
                 </p>
               </div>
               
@@ -620,10 +665,16 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
                   : (language === 'tr' ? 'İyi iş! Pratiğe devam et!' : 'Goed gedaan! Blijf oefenen!')
                 }
               </p>
-              
+             
               <div className="flex gap-4 justify-center">
                 <button
-                  onClick={() => onComplete()}
+                  onClick={() => {
+                    const wrongQuestions = Array.from(wrongFirstAttemptIds).map(id => ({
+                      questionId: id,
+                      skillId: quizById.get(id)?.skill || ''
+                    }));
+                    onComplete({ wrongQuestions });
+                  }}
                   className="px-10 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 flex items-center gap-3 shadow-lg"
                 >
                   {language === 'tr' ? 'Ana sayfaya d?n' : 'Terug naar dashboard'}
@@ -637,6 +688,7 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
     }
 
 // Study phase - Show one letter at a time (or combos for lesson 4)
+  const isLesson5 = lesson.order === 5;
   const totalLetters = isLesson4 ? lesson4Combos.length : lesson.content.alphabetLetters?.length || 0;
   const currentCombo = isLesson4 ? lesson4Combos[currentLetterIndex] : null;
   const currentLetter = lesson.content.alphabetLetters?.[currentLetterIndex];
@@ -661,6 +713,14 @@ export default function NewLessonViewer({ lesson, language, onComplete, onBack }
           ? (language === 'tr' ? currentLetter.note.tr : currentLetter.note.nl)
           : (language === 'tr' ? typeDescriptions[currentLetter.type]?.tr : typeDescriptions[currentLetter.type]?.nl))
       : null;
+    const currentLesson5Forms =
+      isLesson5
+        ? (() => {
+            const idx = baseArabicOrder.indexOf((currentLetter?.arabic || '').trim());
+            const safeIndex = idx >= 0 ? idx : Math.min(currentLetterIndex, lesson5HarakaForms.length - 1);
+            return lesson5HarakaForms[safeIndex];
+          })()
+        : null;
     const currentLesson3Forms =
       lesson.order === 3
         ? (() => {
@@ -736,9 +796,13 @@ if (showIntro) {
                         ? (language === 'tr'
                           ? 'Bu derste 3. derste öğrendiğin bağlama kurallarını kullanarak üç harfli kombinasyonların nasıl birleştiğini dinleyip inceleyeceksin.'
                           : 'In deze les pas je de verbindingsregels uit les 3 toe en hoor je hoe drieletterige combinaties samenkomen.')
-                        : (language === 'tr'
-                          ? 'Bu derste Arapça harfleri pratik ederek kelimeler içinde kullanmayı öğreneceksin.'
-                          : 'In deze les oefen je de Arabische letters verder binnen woorden.')}
+                        : lesson.order === 5
+                          ? (language === 'tr'
+                            ? 'Bu derste harflerin üstün, esre ve ötre ile nasıl okunduğunu öğreneceğiz.\nDikkatle dinle, yavaşça tekrar et ve sesi doğru çıkarmaya çalış.'
+                            : 'In deze les leren we hoe letters klinken met fatḥa, kasra en ḍamma.\nLuister goed, spreek rustig mee en probeer het geluid na te doen.')
+                          : (language === 'tr'
+                            ? 'Bu derste Arapça harfleri pratik ederek kelimeler içinde kullanmayı öğreneceksin.'
+                            : 'In deze les oefen je de Arabische letters verder binnen woorden.')}
               </p>
               <div className="text-center">
                 <button
@@ -793,148 +857,198 @@ if (showIntro) {
 
           {/* Compact Letter Card Display */}
           <div className="bg-white rounded-2xl shadow-xl p-4 mb-3 border-4" style={{ borderColor: bgColor }}>
-            {lesson.order === 3 && currentLesson3Forms ? (
-              <div className="grid md:grid-cols-4 gap-4 mb-3">
-                {[
-                  { key: 'end', label: language === 'tr' ? 'Son' : 'Einde', value: currentLesson3Forms.end },
-                  { key: 'middle', label: language === 'tr' ? 'Orta' : 'Midden', value: currentLesson3Forms.middle },
-                  { key: 'beginning', label: language === 'tr' ? 'Başlangıç' : 'Begin', value: currentLesson3Forms.beginning },
-                  { key: 'isolated', label: language === 'tr' ? 'Bağsız' : 'Losstaand', value: currentLesson3Forms.isolated, canListen: true }
-                ].map(card => (
-                  <div
-                    key={card.key}
-                    className="bg-gray-50 rounded-xl p-4 border-2 flex flex-col items-center justify-center text-center"
-                    style={{ borderColor: bgColor + '40' }}
-                  >
-                    <p className="text-gray-600 text-xs mb-2">{card.label}</p>
-                    <div
-                      className="arabic-text flex items-center justify-center mb-3"
-                      style={{
-                        fontSize: '3.5rem',
-                        color: bgColor,
-                        lineHeight: '1',
-                        minHeight: '100px'
-                      }}
-                    >
-                      {card.value}
-                    </div>
-                    {card.canListen && (
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          const audioId =
-                            getLetterAudioId(currentLesson3Forms.isolated) ||
-                            letterAudioByOrder[currentLetterIndex % letterAudioByOrder.length];
-                          playAudioClip(audioId);
-                        }}
-                        className="bg-purple-500 hover:bg-purple-600 text-white"
-                      >
-                        <Volume2 className="w-4 h-4 mr-1" />
-                        {language === 'tr' ? 'Dinle' : 'Luister'}
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (isLesson4 && currentCombo ? (
-              <div className="relative">
-                <div
-                  className="grid gap-4 mb-3"
-                  style={{ gridTemplateColumns: '3fr 1fr 1fr 1fr' }}
-                >
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border-2 relative" style={{ borderColor: bgColor + '40' }}>
-                    <p className="text-gray-600 text-xs mb-2">{language === 'tr' ? 'Bağlı kelime' : 'Verbonden woord'}</p>
-                    <div 
-                      className="flex items-center justify-center arabic-text"
-                      style={{ 
-                        fontSize: '4rem', 
-                        color: bgColor,
-                        lineHeight: '1',
-                        minHeight: '120px'
-                      }}
-                    >
-                      {currentCombo.connected}
-                    </div>
-                  </div>
-
-                  {currentCombo.separated.slice().reverse().map((char, idx) => {
-                    const type = getLetterTypeForChar(char);
-                    const color = letterTypeColors[type];
-                    return (
+            {(() => {
+              if (lesson.order === 3 && currentLesson3Forms) {
+                return (
+                  <div className="grid md:grid-cols-4 gap-4 mb-3">
+                    {[
+                      { key: 'end', label: language === 'tr' ? 'Son' : 'Einde', value: currentLesson3Forms.end },
+                      { key: 'middle', label: language === 'tr' ? 'Orta' : 'Midden', value: currentLesson3Forms.middle },
+                      { key: 'beginning', label: language === 'tr' ? 'Başlangıç' : 'Begin', value: currentLesson3Forms.beginning },
+                      { key: 'isolated', label: language === 'tr' ? 'Bağsız' : 'Losstaand', value: currentLesson3Forms.isolated, canListen: true }
+                    ].map(card => (
                       <div
-                        key={`${char}-${idx}`}
-                        className="bg-white rounded-xl p-4 border-2 shadow-sm flex flex-col items-center gap-3"
-                        style={{ 
-                          borderColor: color + '40',
-                          backgroundColor: color + '0d'
-                        }}
+                        key={card.key}
+                        className="bg-gray-50 rounded-xl p-4 border-2 flex flex-col items-center justify-center text-center"
+                        style={{ borderColor: bgColor + '40' }}
                       >
-                        <p className="text-gray-600 text-xs">{language === 'tr' ? 'Harf' : 'Letter'}</p>
-                        <div className="arabic-text text-4xl" style={{ color, fontSize: '3.5rem', lineHeight: '1' }}>
-                          {char}
+                        <p className="text-gray-600 text-xs mb-2">{card.label}</p>
+                        <div
+                          className="arabic-text flex items-center justify-center mb-3"
+                          style={{
+                            fontSize: '3.5rem',
+                            color: bgColor,
+                            lineHeight: '1',
+                            minHeight: '100px'
+                          }}
+                        >
+                          {card.value}
+                        </div>
+                        {card.canListen && (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              const audioId =
+                                getLetterAudioId(currentLesson3Forms.isolated) ||
+                                letterAudioByOrder[currentLetterIndex % letterAudioByOrder.length];
+                              playAudioClip(audioId);
+                            }}
+                            className="bg-purple-500 hover:bg-purple-600 text-white"
+                          >
+                            <Volume2 className="w-4 h-4 mr-1" />
+                            {language === 'tr' ? 'Dinle' : 'Luister'}
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+
+              if (isLesson4 && currentCombo) {
+                return (
+                  <div className="relative">
+                    <div
+                      className="grid gap-4 mb-3"
+                      style={{ gridTemplateColumns: '3fr 1fr 1fr 1fr' }}
+                    >
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border-2 relative" style={{ borderColor: bgColor + '40' }}>
+                        <p className="text-gray-600 text-xs mb-2">{language === 'tr' ? 'Bağlı kelime' : 'Verbonden woord'}</p>
+                        <div 
+                          className="flex items-center justify-center arabic-text"
+                          style={{ 
+                            fontSize: '4rem', 
+                            color: bgColor,
+                            lineHeight: '1',
+                            minHeight: '120px'
+                          }}
+                        >
+                          {currentCombo.connected}
+                        </div>
+                      </div>
+
+                      {currentCombo.separated.slice().reverse().map((char, idx) => {
+                        const type = getLetterTypeForChar(char);
+                        const color = letterTypeColors[type];
+                        return (
+                          <div
+                            key={`${char}-${idx}`}
+                            className="bg-white rounded-xl p-4 border-2 shadow-sm flex flex-col items-center gap-3"
+                            style={{ 
+                              borderColor: color + '40',
+                              backgroundColor: color + '0d'
+                            }}
+                          >
+                            <p className="text-gray-600 text-xs">{language === 'tr' ? 'Harf' : 'Letter'}</p>
+                            <div className="arabic-text text-4xl" style={{ color, fontSize: '3.5rem', lineHeight: '1' }}>
+                              {char}
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => playAudioClip(getLetterAudioId(char) || char)}
+                              className="bg-purple-500 hover:bg-purple-600 text-white w-full justify-center"
+                            >
+                              <Volume2 className="w-4 h-4 mr-1" />
+                              {language === 'tr' ? 'Dinle' : 'Luister'}
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
+
+              if (isLesson5 && currentLesson5Forms) {
+                return (
+                  <div className="grid md:grid-cols-4 gap-4 mb-3">
+                    {[
+                      { key: 'damma', label: language === 'tr' ? 'Ötre (Ḍamma)' : 'Damma', value: currentLesson5Forms.damma, audioId: currentLesson5Forms.audios.damma },
+                      { key: 'kasra', label: language === 'tr' ? 'Esre (Kasra)' : 'Kasra', value: currentLesson5Forms.kasra, audioId: currentLesson5Forms.audios.kasra },
+                      { key: 'fatha', label: language === 'tr' ? 'Üstün (Fatḥa)' : 'Fatha', value: currentLesson5Forms.fatha, audioId: currentLesson5Forms.audios.fatha },
+                      { key: 'isolated', label: language === 'tr' ? 'Normal' : 'Normaal', value: currentLesson5Forms.isolated, audioId: getLetterAudioId(currentLesson5Forms.isolated) || letterAudioByOrder[currentLetterIndex % letterAudioByOrder.length] }
+                    ].map(card => (
+                      <div
+                        key={card.key}
+                        className="bg-gray-50 rounded-xl p-4 border-2 flex flex-col items-center justify-center text-center"
+                        style={{ borderColor: bgColor + '40' }}
+                      >
+                        <p className="text-gray-600 text-xs mb-2">{card.label}</p>
+                        <div
+                          className="arabic-text flex items-center justify-center mb-3"
+                          style={{
+                            fontSize: '3.5rem',
+                            color: bgColor,
+                            lineHeight: '1',
+                            minHeight: '100px'
+                          }}
+                        >
+                          {card.value}
                         </div>
                         <Button
                           size="sm"
-                          onClick={() => playAudioClip(getLetterAudioId(char) || char)}
-                          className="bg-purple-500 hover:bg-purple-600 text-white w-full justify-center"
+                          onClick={() => playAudioClip(card.audioId)}
+                          className="bg-purple-500 hover:bg-purple-600 text-white"
                         >
                           <Volume2 className="w-4 h-4 mr-1" />
                           {language === 'tr' ? 'Dinle' : 'Luister'}
                         </Button>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-3 gap-4 mb-3">
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border-2 relative" style={{ borderColor: bgColor + '40' }}>
-                  <div 
-                    className="flex items-center justify-center arabic-text"
-                    style={{ 
-                      fontSize: '5rem', 
-                      color: bgColor,
-                      lineHeight: '1',
-                      minHeight: '120px'
-                    }}
-                  >
-                    {currentLetter.arabic}
+                    ))}
                   </div>
-                </div>
+                );
+              }
 
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-200 relative">
-                  <p className="text-gray-600 text-xs mb-1">{t.letterName}</p>
-                  <p className="text-xl font-semibold text-gray-900">{currentLetter.name}</p>
-                  <p className="text-gray-600 text-xs mt-3 mb-1">{t.letterPronunciationLabel}</p>
-                  <div className="flex items-center gap-3">
-                    <p className="text-gray-800 text-lg">
-                      {language === 'tr' ? currentLetter.pronunciation.tr : currentLetter.pronunciation.nl}
-                    </p>
-                    <Button
-                      size="sm"
-                      onClick={playLetterAudio}
-                      className="bg-purple-500 hover:bg-purple-600 text-white"
+              return (
+                <div className="grid md:grid-cols-3 gap-4 mb-3">
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border-2 relative" style={{ borderColor: bgColor + '40' }}>
+                    <div 
+                      className="flex items-center justify-center arabic-text"
+                      style={{ 
+                        fontSize: '5rem', 
+                        color: bgColor,
+                        lineHeight: '1',
+                        minHeight: '120px'
+                      }}
                     >
-                      <Volume2 className="w-4 h-4 mr-1" />
-                      {language === 'tr' ? 'Dinle' : 'Luister'}
-                    </Button>
+                      {currentLetter.arabic}
+                    </div>
                   </div>
-                </div>
 
-                {currentLetter.word && (
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border-2 border-green-200">
-                    <p className="text-gray-600 text-xs mb-1">{t.wordStartsWith}</p>
-                    <p className="text-xl font-semibold text-gray-900">
-                      {language === 'tr' ? currentLetter.word.pronunciation.tr : currentLetter.word.pronunciation.nl}
-                    </p>
-                    <p className="text-gray-600 text-xs mt-3 mb-1">{t.wordMeaning}</p>
-                    <p className="text-gray-800 text-sm">
-                      {language === 'tr' ? currentLetter.word.translation.tr : currentLetter.word.translation.nl}
-                    </p>
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-200 relative">
+                    <p className="text-gray-600 text-xs mb-1">{t.letterName}</p>
+                    <p className="text-xl font-semibold text-gray-900">{currentLetter.name}</p>
+                    <p className="text-gray-600 text-xs mt-3 mb-1">{t.letterPronunciationLabel}</p>
+                    <div className="flex items-center gap-3">
+                      <p className="text-gray-800 text-lg">
+                        {language === 'tr' ? currentLetter.pronunciation.tr : currentLetter.pronunciation.nl}
+                      </p>
+                      <Button
+                        size="sm"
+                        onClick={playLetterAudio}
+                        className="bg-purple-500 hover:bg-purple-600 text-white"
+                      >
+                        <Volume2 className="w-4 h-4 mr-1" />
+                        {language === 'tr' ? 'Dinle' : 'Luister'}
+                      </Button>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {currentLetter.word && (
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border-2 border-green-200">
+                      <p className="text-gray-600 text-xs mb-1">{t.wordStartsWith}</p>
+                      <p className="text-xl font-semibold text-gray-900">
+                        {language === 'tr' ? currentLetter.word.pronunciation.tr : currentLetter.word.pronunciation.nl}
+                      </p>
+                      <p className="text-gray-600 text-xs mt-3 mb-1">{t.wordMeaning}</p>
+                      <p className="text-gray-800 text-sm">
+                        {language === 'tr' ? currentLetter.word.translation.tr : currentLetter.word.translation.nl}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {!isLesson4 && currentLetter?.type && (
               <div 
@@ -1122,7 +1236,11 @@ if (completed) {
   };
 
   const handleComplete = () => {
-    onComplete();
+    const wrongQuestions = Array.from(wrongFirstAttemptIds).map(id => ({
+      questionId: id,
+      skillId: quizById.get(id)?.skill || ''
+    }));
+    onComplete({ wrongQuestions });
   };
 
   if (completed) {

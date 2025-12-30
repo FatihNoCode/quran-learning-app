@@ -33,10 +33,22 @@ export function LessonActivity({ lesson, language, progress, onComplete }: Lesso
   const quizzesCompleted = quizResults.length;
   const progressPercentage = (quizzesCompleted / totalQuizzes) * 100;
 
-  const handleQuizAnswer = (isCorrect: boolean) => {
+  const [firstAttemptWrongIds, setFirstAttemptWrongIds] = useState<Set<string>>(new Set());
+
+  const handleQuizAnswer = (
+    isCorrect: boolean,
+    _selectedIndex?: number | null,
+    attemptNumber?: number,
+    hadFirstAttemptWrong?: boolean
+  ) => {
     // Update quiz results
     const newResults = [...quizResults, isCorrect];
     setQuizResults(newResults);
+
+    // Track questions that were wrong on first try (even if later corrected)
+    if (hadFirstAttemptWrong || (attemptNumber === 1 && !isCorrect)) {
+      setFirstAttemptWrongIds(prev => new Set(prev).add(currentQuiz.id));
+    }
 
     // Update streak
     const newStreak = isCorrect ? correctAnswerStreak + 1 : 0;
@@ -49,14 +61,6 @@ export function LessonActivity({ lesson, language, progress, onComplete }: Lesso
     
     const newMastery = updateSkillMastery(currentMastery, skillId, isCorrect);
     
-    // Update review queue
-    const newReviewQueue = updateReviewQueue(
-      updatedProgress.reviewQueue,
-      currentQuiz.id,
-      skillId,
-      isCorrect
-    );
-
     // Calculate points
     const pointsEarned = calculatePoints(isCorrect, newMastery, previousMasteryLevel);
 
@@ -67,7 +71,8 @@ export function LessonActivity({ lesson, language, progress, onComplete }: Lesso
         ...updatedProgress.skillMastery,
         [skillId]: newMastery
       },
-      reviewQueue: newReviewQueue,
+      // Review queue will be updated after lesson completion based on first-attempt wrong answers
+      reviewQueue: updatedProgress.reviewQueue,
       totalPoints: updatedProgress.totalPoints + pointsEarned,
       stats: {
         ...updatedProgress.stats,
@@ -104,9 +109,18 @@ export function LessonActivity({ lesson, language, progress, onComplete }: Lesso
   };
 
   const handleComplete = () => {
+    // Add all first-attempt-wrong questions to the review queue now that the lesson is completed
+    const questionsToReview = Array.from(firstAttemptWrongIds);
+    const reviewUpdated = questionsToReview.reduce((queue, questionId) => {
+      const quiz = validQuizzes.find(q => q.id === questionId);
+      if (!quiz) return queue;
+      return updateReviewQueue(queue, questionId, quiz.skill, false);
+    }, updatedProgress.reviewQueue);
+
     // Mark lesson as completed (without regressing progress)
     const finalProgress: StudentProgress = {
       ...updatedProgress,
+      reviewQueue: reviewUpdated,
       completedLessons: Array.from(new Set([...updatedProgress.completedLessons, lesson.id])),
       currentLessonOrder: Math.max(updatedProgress.currentLessonOrder || 1, lesson.order + 1)
     };
