@@ -185,6 +185,7 @@ export function QuizComponent({
   const autoSubmit =
     quiz.bundleId?.startsWith('lesson-3') ||
     quiz.bundleId?.startsWith('lesson-4') ||
+    quiz.bundleId?.startsWith('lesson-5') ||
     quiz.type === 'audio-mc' ||
     quiz.type === 'timed-audio-mc' ||
     quiz.type === 'error-detection';
@@ -339,7 +340,8 @@ export function QuizComponent({
       !isAnswered &&
       selectedAnswer !== null &&
       attempts < maxAttempts &&
-      !(quiz.bundleId?.startsWith('lesson-4'));
+      !(quiz.bundleId?.startsWith('lesson-4')) &&
+      !(quiz.bundleId?.startsWith('lesson-5'));
     const timePercent =
       showTimer && timeLeft !== null && quiz.timeLimitSeconds
         ? Math.max(0, Math.min(100, (timeLeft / quiz.timeLimitSeconds) * 100))
@@ -714,13 +716,13 @@ function DraggableItem({
     }),
   }), [submitted, locked]);
 
-  const containerClass = sizeLarge ? 'p-6 min-h-[220px]' : 'p-3 min-h-[90px]';
+  const containerClass = sizeLarge ? 'p-3 min-h-[190px]' : 'p-2 min-h-[140px] min-w-[140px]';
   const itemText = item.content[language];
   const isArabic = isArabicText(itemText);
   const letterSize = sizeLarge
-    ? 'text-9xl leading-none'
+    ? 'arabic-text drop-arabic-large drop-arabic-center'
     : isArabic
-    ? 'text-7xl leading-none'
+    ? 'arabic-text drop-arabic-large drop-arabic-center'
     : 'text-lg';
 
   return (
@@ -735,7 +737,13 @@ function DraggableItem({
       } ${isPaired && !submitted ? 'border-purple-500 bg-purple-100' : ''}`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className={`text-lg arabic-text ${letterSize}`}>{item.content[language]}</span>
+        {isArabic ? (
+          <span className="arabic-letter-box">
+            <span className={letterSize}>{item.content[language]}</span>
+          </span>
+        ) : (
+          <span className={letterSize}>{item.content[language]}</span>
+        )}
         {item.audioId && !submitted && !disableAudio && (
           <Button
             size="sm"
@@ -788,24 +796,27 @@ function DropTarget({
 
   const isCorrect = submitted && matched && correctPair && matched.sourceId === correctPair.sourceId;
   const isIncorrect = submitted && matched && correctPair && matched.sourceId !== correctPair.sourceId;
-  const containerClass = sizeLarge ? 'p-6 min-h-[220px]' : 'p-3 min-h-[90px]';
-  const targetText = target.content[language];
+  const containerClass = sizeLarge ? 'p-2 h-[70px] w-[70px]' : 'p-2 min-h-[90px]';
+  const containerStyle = sizeLarge ? { height: '70px', width: '70px' } : undefined;
+  const rawTargetText = target.content[language];
+  const targetText = rawTargetText?.trim() === '[ _ ]' ? '' : rawTargetText;
   const matchedSourceText = matchedSource?.content?.[language];
   const isArabicTarget = isArabicText(targetText);
   const isArabicMatchedSource = isArabicText(matchedSourceText);
   const matchedSize = sizeLarge
-    ? 'arabic-text text-8xl leading-none'
+    ? 'arabic-text drop-arabic-large drop-arabic-center'
     : isArabicMatchedSource
-    ? 'arabic-text text-7xl leading-none'
+    ? 'arabic-text drop-arabic-large drop-arabic-center'
     : 'text-lg';
   const targetLabelClass = isArabicTarget
-    ? 'arabic-text text-7xl leading-none text-purple-700'
-    : 'text-sm font-semibold text-purple-700';
+    ? 'arabic-text drop-arabic-large drop-arabic-center text-purple-700'
+    : 'text-base font-semibold text-purple-700';
 
   return (
     <div
       ref={drop}
-      className={`${containerClass} border-2 rounded-xl transition-all shadow-sm ${
+      style={containerStyle}
+      className={`${containerClass} grid place-items-center text-center border-2 rounded-xl transition-all shadow-sm ${
         isOver && !submitted
           ? 'border-purple-500 bg-purple-100 scale-105'
           : submitted
@@ -819,9 +830,11 @@ function DropTarget({
           : 'border-dashed border-gray-400 bg-gray-50'
       }`}
     >
-      {!sizeLarge && (
-        <div className={`${targetLabelClass} mb-2 ${isArabicTarget ? '' : 'text-center'}`}>
-          {targetText}
+      {!matched && (
+        <div className={`${isArabicTarget ? 'arabic-letter-box' : ''}`}>
+          <span className={`${targetLabelClass} ${isArabicTarget ? '' : 'text-center'}`}>
+            {targetText}
+          </span>
         </div>
       )}
       {matched && matchedSource && (
@@ -833,9 +846,17 @@ function DropTarget({
             : 'bg-white border-2 border-purple-300'
         }`}>
           <div className="flex items-center justify-center">
-            <span className={matchedSize}>
-              {matchedSourceText}
-            </span>
+            {isArabicMatchedSource ? (
+              <span className="arabic-letter-box">
+                <span className={matchedSize}>
+                  {matchedSourceText}
+                </span>
+              </span>
+            ) : (
+              <span className={matchedSize}>
+                {matchedSourceText}
+              </span>
+            )}
             {submitted && (
               isCorrect ? (
                 <Check className="text-green-700" size={20} />
@@ -844,11 +865,6 @@ function DropTarget({
               )
             )}
           </div>
-        </div>
-      )}
-      {!matched && !submitted && (
-        <div className="text-center text-gray-400 text-sm mt-4">
-          {language === 'tr' ? 'Buraya sürükle' : 'Sleep hier naartoe'}
         </div>
       )}
     </div>

@@ -175,7 +175,7 @@ function App() {
     <header className="bg-white shadow-md">
         <div className="max-w-6xl mx-auto py-4 px-0 flex items-center justify-between relative">
           <div className="flex items-center gap-3">
-            <div className="flex bg-white border-2 border-purple-300 rounded-full overflow-hidden shadow-sm">
+            <div className="flex bg-white border-2 border-purple-300 rounded-lg overflow-hidden shadow-sm">
               <button
                 onClick={() => handleLanguageChange('tr')}
                 className={`px-4 py-2 transition-all ${

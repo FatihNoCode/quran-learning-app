@@ -199,3 +199,14 @@ html {
 :where(.text-arabic, [lang|="ar"], [lang^="ar"], :lang(ar)) {
   font-family: 'Amiri Quran', 'Scheherazade New', 'Noto Naskh Arabic', serif !important;
 }
+
+/* Larger sizing helpers for drop targets where Tailwind doesn't provide text-9xl by default */
+.drop-arabic-large {
+  font-size: clamp(4rem, 8vw, 6.5rem);
+  line-height: 1;
+}
+
+.drop-arabic-xl {
+  font-size: clamp(5rem, 9vw, 7.5rem);
+  line-height: 1;
+}

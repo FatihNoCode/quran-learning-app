@@ -2576,6 +2576,23 @@ html {
   font-family: "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic", serif !important;
 }
 
+/* Bigger Arabic helpers for drag-drop targets */
+.drop-arabic-large {
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  line-height: 1;
+  display: inline-block;
+}
+
+.drop-arabic-xl {
+  font-size: clamp(1.9rem, 3.5vw, 3.2rem);
+  line-height: 1;
+  display: inline-block;
+}
+
+.drop-arabic-center {
+  text-align: center;
+}
+
 @property --tw-translate-x {
   syntax: "*";
   inherits: false;

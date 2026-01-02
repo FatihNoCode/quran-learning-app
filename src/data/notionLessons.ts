@@ -2815,8 +2815,400 @@ const lesson4: Lesson = {
   }
 };
 
+const lesson5Quizzes: Quiz[] = [
+  // Bundle 1 – Audio → single letter (very easy)
+  {
+    id: 'lesson-5-b1-q1',
+    bundleId: 'lesson-5-bundle-1',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'ba fatha',
+    question: { tr: 'Dinle ve doğru harfi sürükle.', nl: 'Luister en sleep de juiste letter.' },
+    options: [
+      { tr: 'بَ', nl: 'بَ' },
+      { tr: 'بِ', nl: 'بِ' },
+      { tr: 'بُ', nl: 'بُ' }
+    ],
+    correctAnswer: 0
+  },
+  {
+    id: 'lesson-5-b1-q2',
+    bundleId: 'lesson-5-bundle-1',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'ta (neutral) kasra',
+    question: { tr: 'Hangi harf bu sese ait?', nl: 'Welke letter hoort bij het geluid?' },
+    options: [
+      { tr: 'تَ', nl: 'تَ' },
+      { tr: 'تِ', nl: 'تِ' },
+      { tr: 'تُ', nl: 'تُ' }
+    ],
+    correctAnswer: 1
+  },
+  {
+    id: 'lesson-5-b1-q3',
+    bundleId: 'lesson-5-bundle-1',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'sin damma',
+    question: { tr: 'Doğru harfi kutuya sürükle.', nl: 'Sleep de juiste letter naar het vak.' },
+    options: [
+      { tr: 'سَ', nl: 'سَ' },
+      { tr: 'سِ', nl: 'سِ' },
+      { tr: 'سُ', nl: 'سُ' }
+    ],
+    correctAnswer: 2
+  },
+  {
+    id: 'lesson-5-b1-q4',
+    bundleId: 'lesson-5-bundle-1',
+    type: 'multiple-choice',
+    skill: 'haraka-basics-5',
+    question: { tr: 'Hangi hareke harfin altındadır?', nl: 'Welke haraka staat onder de letter?' },
+    options: [
+      { tr: 'üstün', nl: 'fatḥa' },
+      { tr: 'esre', nl: 'kasra' },
+      { tr: 'ötre', nl: 'ḍamma' }
+    ],
+    correctAnswer: 1
+  },
+  {
+    id: 'lesson-5-b1-q5',
+    bundleId: 'lesson-5-bundle-1',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'mim fatha',
+    question: { tr: 'Dikkatle dinle ve doğru şekli seç.', nl: 'Luister goed en kies de juiste vorm.' },
+    options: [
+      { tr: 'مَ', nl: 'مَ' },
+      { tr: 'مِ', nl: 'مِ' },
+      { tr: 'مُ', nl: 'مُ' }
+    ],
+    correctAnswer: 0
+  },
+  {
+    id: 'lesson-5-b1-q6',
+    bundleId: 'lesson-5-bundle-1',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'nun kasra',
+    question: { tr: 'Hangi harfi duyuyorsun?', nl: 'Welke letter hoor je?' },
+    options: [
+      { tr: 'نَ', nl: 'نَ' },
+      { tr: 'نِ', nl: 'نِ' },
+      { tr: 'نُ', nl: 'نُ' }
+    ],
+    correctAnswer: 1
+  },
+  {
+    id: 'lesson-5-b1-q7',
+    bundleId: 'lesson-5-bundle-1',
+    type: 'true-false',
+    skill: 'haraka-basics-5',
+    question: { tr: 'Ötre harfin üstünde olur.', nl: 'Bij ḍamma staat het teken boven de letter.' },
+    options: [
+      { tr: 'Evet', nl: 'Ja' },
+      { tr: 'Hayır', nl: 'Nee' }
+    ],
+    correctAnswer: 0
+  },
+  // Bundle 2 – Audio → discrimination
+  {
+    id: 'lesson-5-b2-q1',
+    bundleId: 'lesson-5-bundle-2',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'lam kasra',
+    question: { tr: 'Doğru harfi sürükle.', nl: 'Sleep de juiste letter.' },
+    options: [
+      { tr: 'لَ', nl: 'لَ' },
+      { tr: 'لِ', nl: 'لِ' },
+      { tr: 'لُ', nl: 'لُ' }
+    ],
+    correctAnswer: 1
+  },
+  {
+    id: 'lesson-5-b2-q2',
+    bundleId: 'lesson-5-bundle-2',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'fa damma',
+    question: { tr: 'Hangi şekil bu sese ait?', nl: 'Welke vorm hoort bij het geluid?' },
+    options: [
+      { tr: 'فَ', nl: 'فَ' },
+      { tr: 'فِ', nl: 'فِ' },
+      { tr: 'فُ', nl: 'فُ' }
+    ],
+    correctAnswer: 2
+  },
+  {
+    id: 'lesson-5-b2-q3',
+    bundleId: 'lesson-5-bundle-2',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'ra fatha',
+    question: { tr: 'Hareke ile doğru harfi seç.', nl: 'Kies de juiste letter met haraka.' },
+    options: [
+      { tr: 'رَ', nl: 'رَ' },
+      { tr: 'رِ', nl: 'رِ' },
+      { tr: 'رُ', nl: 'رُ' }
+    ],
+    correctAnswer: 0
+  },
+  {
+    id: 'lesson-5-b2-q4',
+    bundleId: 'lesson-5-bundle-2',
+    type: 'multiple-choice',
+    skill: 'haraka-basics-5',
+    question: { tr: 'bi sesi hangi hareke ile olur?', nl: 'Welke haraka hoort bij bi?' },
+    options: [
+      { tr: 'üstün', nl: 'fatḥa' },
+      { tr: 'esre', nl: 'kasra' },
+      { tr: 'ötre', nl: 'ḍamma' }
+    ],
+    correctAnswer: 1
+  },
+  {
+    id: 'lesson-5-b2-q5',
+    bundleId: 'lesson-5-bundle-2',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'kaf kasra',
+    question: { tr: 'Dinle ve sürükle.', nl: 'Luister en sleep.' },
+    options: [
+      { tr: 'كَ', nl: 'كَ' },
+      { tr: 'كِ', nl: 'كِ' },
+      { tr: 'كُ', nl: 'كُ' }
+    ],
+    correctAnswer: 1
+  },
+  {
+    id: 'lesson-5-b2-q6',
+    bundleId: 'lesson-5-bundle-2',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'waw damma',
+    question: { tr: 'Hangisi doğru?', nl: 'Welke letter is correct?' },
+    options: [
+      { tr: 'وَ', nl: 'وَ' },
+      { tr: 'وِ', nl: 'وِ' },
+      { tr: 'وُ', nl: 'وُ' }
+    ],
+    correctAnswer: 2
+  },
+  {
+    id: 'lesson-5-b2-q7',
+    bundleId: 'lesson-5-bundle-2',
+    type: 'true-false',
+    skill: 'haraka-basics-5',
+    question: { tr: 'Bir harfte aynı anda birden fazla hareke olur.', nl: 'Een letter kan meerdere harakāt tegelijk hebben.' },
+    options: [
+      { tr: 'Evet', nl: 'Ja' },
+      { tr: 'Hayır', nl: 'Nee' }
+    ],
+    correctAnswer: 1
+  },
+  // Bundle 3 – Audio + detail
+  {
+    id: 'lesson-5-b3-q1',
+    bundleId: 'lesson-5-bundle-3',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'sad fatha',
+    question: { tr: 'Doğru harfi sürükle.', nl: 'Sleep de juiste letter.' },
+    options: [
+      { tr: 'صَ', nl: 'صَ' },
+      { tr: 'صِ', nl: 'صِ' },
+      { tr: 'صُ', nl: 'صُ' }
+    ],
+    correctAnswer: 0
+  },
+  {
+    id: 'lesson-5-b3-q2',
+    bundleId: 'lesson-5-bundle-3',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'dad kasra',
+    question: { tr: 'Doğru şekli seç.', nl: 'Kies de juiste vorm.' },
+    options: [
+      { tr: 'ضَ', nl: 'ضَ' },
+      { tr: 'ضِ', nl: 'ضِ' },
+      { tr: 'ضُ', nl: 'ضُ' }
+    ],
+    correctAnswer: 1
+  },
+  {
+    id: 'lesson-5-b3-q3',
+    bundleId: 'lesson-5-bundle-3',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'ta (heavy) damma',
+    question: { tr: 'Hangi harf bu sese ait?', nl: 'Welke letter hoort bij het geluid?' },
+    options: [
+      { tr: 'طَ', nl: 'طَ' },
+      { tr: 'طِ', nl: 'طِ' },
+      { tr: 'طُ', nl: 'طُ' }
+    ],
+    correctAnswer: 2
+  },
+  {
+    id: 'lesson-5-b3-q4',
+    bundleId: 'lesson-5-bundle-3',
+    type: 'multiple-choice',
+    skill: 'haraka-basics-5',
+    question: { tr: 'Hangi hareke altta yazılır?', nl: 'Welke haraka staat onder de letter?' },
+    options: [
+      { tr: 'üstün', nl: 'fatḥa' },
+      { tr: 'esre', nl: 'kasra' },
+      { tr: 'ötre', nl: 'ḍamma' }
+    ],
+    correctAnswer: 1
+  },
+  {
+    id: 'lesson-5-b3-q5',
+    bundleId: 'lesson-5-bundle-3',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'ayn fatha',
+    question: { tr: 'Dinle ve seç.', nl: 'Luister en kies.' },
+    options: [
+      { tr: 'عَ', nl: 'عَ' },
+      { tr: 'عِ', nl: 'عِ' },
+      { tr: 'عُ', nl: 'عُ' }
+    ],
+    correctAnswer: 0
+  },
+  {
+    id: 'lesson-5-b3-q6',
+    bundleId: 'lesson-5-bundle-3',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'ghayn damma',
+    question: { tr: 'Doğru harfi sürükle.', nl: 'Sleep de juiste letter.' },
+    options: [
+      { tr: 'غَ', nl: 'غَ' },
+      { tr: 'غِ', nl: 'غِ' },
+      { tr: 'غُ', nl: 'غُ' }
+    ],
+    correctAnswer: 2
+  },
+  {
+    id: 'lesson-5-b3-q7',
+    bundleId: 'lesson-5-bundle-3',
+    type: 'true-false',
+    skill: 'haraka-basics-5',
+    question: { tr: 'Esre her zaman harfin altındadır.', nl: 'Kasra staat altijd onder de letter.' },
+    options: [
+      { tr: 'Evet', nl: 'Ja' },
+      { tr: 'Hayır', nl: 'Nee' }
+    ],
+    correctAnswer: 0
+  },
+  // Bundle 4 – Mastery
+  {
+    id: 'lesson-5-b4-q1',
+    bundleId: 'lesson-5-bundle-4',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'qaf kasra',
+    question: { tr: 'Doğru harfi seç.', nl: 'Kies de juiste letter.' },
+    options: [
+      { tr: 'قَ', nl: 'قَ' },
+      { tr: 'قِ', nl: 'قِ' },
+      { tr: 'قُ', nl: 'قُ' }
+    ],
+    correctAnswer: 1
+  },
+  {
+    id: 'lesson-5-b4-q2',
+    bundleId: 'lesson-5-bundle-4',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'ya fatha',
+    question: { tr: 'Hangi şekil doğru?', nl: 'Welke vorm klopt?' },
+    options: [
+      { tr: 'يَ', nl: 'يَ' },
+      { tr: 'يِ', nl: 'يِ' },
+      { tr: 'يُ', nl: 'يُ' }
+    ],
+    correctAnswer: 0
+  },
+  {
+    id: 'lesson-5-b4-q3',
+    bundleId: 'lesson-5-bundle-4',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'ha later damma',
+    question: { tr: 'Doğru harfi sürükle.', nl: 'Sleep de juiste letter.' },
+    options: [
+      { tr: 'هَ', nl: 'هَ' },
+      { tr: 'هِ', nl: 'هِ' },
+      { tr: 'هُ', nl: 'هُ' }
+    ],
+    correctAnswer: 2
+  },
+  {
+    id: 'lesson-5-b4-q4',
+    bundleId: 'lesson-5-bundle-4',
+    type: 'multiple-choice',
+    skill: 'haraka-basics-5',
+    question: { tr: 'bu sesi hangi hareke ile olur?', nl: 'Welke haraka hoort bij bu?' },
+    options: [
+      { tr: 'üstün', nl: 'fatḥa' },
+      { tr: 'esre', nl: 'kasra' },
+      { tr: 'ötre', nl: 'ḍamma' }
+    ],
+    correctAnswer: 2
+  },
+  {
+    id: 'lesson-5-b4-q5',
+    bundleId: 'lesson-5-bundle-4',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'shin kasra',
+    question: { tr: 'Dinle ve doğru harfi seç.', nl: 'Luister en kies de juiste letter.' },
+    options: [
+      { tr: 'شَ', nl: 'شَ' },
+      { tr: 'شِ', nl: 'شِ' },
+      { tr: 'شُ', nl: 'شُ' }
+    ],
+    correctAnswer: 1
+  },
+  {
+    id: 'lesson-5-b4-q6',
+    bundleId: 'lesson-5-bundle-4',
+    type: 'audio-mc',
+    skill: 'haraka-basics-5',
+    audioId: 'lam damma',
+    question: { tr: 'Doğru şekli sürükle.', nl: 'Sleep de juiste vorm.' },
+    options: [
+      { tr: 'لَ', nl: 'لَ' },
+      { tr: 'لِ', nl: 'لِ' },
+      { tr: 'لُ', nl: 'لُ' }
+    ],
+    correctAnswer: 2
+  },
+  {
+    id: 'lesson-5-b4-q7',
+    bundleId: 'lesson-5-bundle-4',
+    type: 'true-false',
+    skill: 'haraka-basics-5',
+    question: { tr: 'Harekeler harfin okunuşunu değiştirir.', nl: 'Harakāt veranderen hoe een letter wordt gelezen.' },
+    options: [
+      { tr: 'Evet', nl: 'Ja' },
+      { tr: 'Hayır', nl: 'Nee' }
+    ],
+    correctAnswer: 0
+  }
+];
+
+const lesson5: Lesson = {
+  ...createLessonFromLesson1(5),
+  quizzes: lesson5Quizzes
+};
+
 const clonedLessons = Array.from({ length: 25 }, (_, idx) => createLessonFromLesson1(idx + 4)).filter(
-  lesson => lesson.order !== 4
+  lesson => lesson.order !== 4 && lesson.order !== 5
 );
 
 export const lessons: Lesson[] = [
@@ -2824,6 +3216,7 @@ export const lessons: Lesson[] = [
   lesson2,
   lesson3,
   lesson4,
+  lesson5,
   ...clonedLessons
 ];
 

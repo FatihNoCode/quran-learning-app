@@ -206,7 +206,7 @@ export default function Auth({ onLogin, language, onLanguageChange }: AuthProps)
       <div className="max-w-md w-full relative">
         {/* Language Toggle - Top Left (matches post-login pill) */}
         <div className="absolute top-0 left-0 z-10">
-          <div className="flex bg-white border-2 border-purple-300 rounded-full overflow-hidden shadow-sm">
+          <div className="flex bg-white border-2 border-purple-300 rounded-lg overflow-hidden shadow-sm">
             <button
               onClick={() => onLanguageChange('tr')}
               className={`px-4 py-2 transition-all ${
